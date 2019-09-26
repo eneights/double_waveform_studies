@@ -6,6 +6,8 @@ from pathlib import Path
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 
+# FILE READING/WRITING
+
 
 # Reads csv file with header and time & voltage columns
 # Returns time array, voltage array, and header as a string
@@ -41,6 +43,50 @@ def ww(x, y, file_name, hdr):
         line = '%.7E,%f\n' % (ix, iy)
         myfile.write(line)
     myfile.close()                          # Closes waveform file
+
+
+# Creates text file with time of beginning of spe, time of end of spe, charge, amplitude, fwhm, 10-90 & 20-80 rise
+# times, 10-90 & 20-80 fall times, and 10%, 20%, 80% & 90% jitter for an spe file
+def save_calculations(dest_path, i, t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10,
+                      time20, time80, time90):
+    file_name = str(dest_path / 'calculations' / 'D1--waveforms--%05d.txt') % i
+    myfile = open(file_name, 'w')
+    myfile.write('t1,' + str(t1))
+    myfile.write('\nt2,' + str(t2))
+    myfile.write('\ncharge,' + str(charge))
+    myfile.write('\namplitude,' + str(amplitude))
+    myfile.write('\nfwhm,' + str(fwhm))
+    myfile.write('\nrise1090,' + str(rise1090))
+    myfile.write('\nrise2080,' + str(rise2080))
+    myfile.write('\nfall1090,' + str(fall1090))
+    myfile.write('\nfall2080,' + str(fall2080))
+    myfile.write('\ntime10,' + str(time10))
+    myfile.write('\ntime20,' + str(time20))
+    myfile.write('\ntime80,' + str(time80))
+    myfile.write('\ntime90,' + str(time90))
+    myfile.close()
+
+
+# Creates text file with data from an array
+def write_hist_data(array, dest_path, name):
+    array = np.sort(array)
+    file_name = Path(dest_path / 'hist_data' / name)
+
+    myfile = open(file_name, 'w')
+    for item in array:  # Writes an array item on each line of file
+        myfile.write(str(item) + '\n')
+    myfile.close()
+
+
+# Checks if a file exists
+def check_if_file(path, file_name):
+    if os.path.isfile(path / file_name):
+        return 'yes'
+    else:
+        return 'no'
+
+
+# CALCULATIONS
 
 
 # Returns the average baseline (baseline noise level)
@@ -153,7 +199,193 @@ def calculate_fwhm(t, v):
         if np.diff(vvals)[i] < 0:                               # negative differential equal to infinity
             difference_value[i] = np.inf
     difference_value = difference_value[index_min.item():len(vvals) - 1]
-    idx = np.argmin(difference_value)       # Finds index of 50% max in voltage array
-    half_max_time = tvals[idx + index_min.item()]   # Finds time of 50% max
+    half_max_time = tvals[np.argmin(difference_value) + index_min.item()]   # Finds time of 50% max
 
     return half_max_time
+
+
+# Returns rise times of given percentages of amplitude
+def rise_time(t, v, low, high):
+    percent_low = low / 100
+    percent_high = high / 100
+
+    avg = calculate_average(t, v)               # Calculates average baseline
+    t1, t2 = calculate_t1_t2(t, v)              # Calculates start time of spe
+    min_time = t[np.where(v == min(v))][0]      # Finds time at point of minimum voltage
+
+    val_1 = percent_low * (min(v) - avg)        # Calculates first percent of max
+    val_2 = percent_high * (min(v) - avg)       # Calculates second percent of max
+
+    tvals = np.linspace(t1, min_time, 5000) # Creates array of times from beginning of spe to point of minimum voltage
+    vvals = np.interp(tvals, t, v)  # Interpolates & creates array of voltages from beginning of spe to minimum voltage
+
+    time_low = tvals[np.argmin(np.abs(vvals - val_1))]          # Finds time of point of first percent of max
+    time_high = tvals[np.argmin(np.abs(vvals - val_2))]         # Finds time of point of second percent of max
+
+    risetime = time_high - time_low                             # Calculates rise time
+    risetime = float(format(risetime, '.2e'))
+
+    return risetime
+
+
+# Returns fall times of given percentages of amplitude
+def fall_time(t, v, low, high):
+    percent_low = low / 100
+    percent_high = high / 100
+
+    avg = calculate_average(t, v)               # Calculates average baseline
+    t1, t2 = calculate_t1_t2(t, v)              # Calculates start time of spe
+    min_time = t[np.where(v == min(v))][0]      # Finds time at point of minimum voltage
+
+    val_1 = percent_high * (min(v) - avg)       # Calculates first percent of max
+    val_2 = percent_low * (min(v) - avg)        # Calculates second percent of max
+
+    tvals = np.linspace(min_time, t2, 5000)  # Creates array of times from beginning of spe to point of minimum voltage
+    vvals = np.interp(tvals, t, v)  # Interpolates & creates array of voltages from beginning of spe to minimum voltage
+
+    time_high = tvals[np.argmin(np.abs(vvals - val_1))]     # Finds time of point of first percent of max
+    time_low = tvals[np.argmin(np.abs(vvals - val_2))]      # Finds time of point of second percent of max
+
+    falltime = time_low - time_high                         # Calculates fall time
+    falltime = float(format(falltime, '.2e'))
+
+    return falltime
+
+
+# Returns percent jitter of a given percent
+def calculate_jitter(t, v, per):
+    percent = per / 100
+
+    avg = calculate_average(t, v)               # Calculates average baseline
+    t1, t2 = calculate_t1_t2(t, v)              # Calculates start time of spe
+    min_time = t[np.where(v == min(v))][0]      # Finds time at point of minimum voltage
+
+    val = percent * (min(v) - avg)              # Calculates percent of max
+    tvals = np.linspace(t1, min_time, 5000) # Creates array of times from beginning of spe to point of minimum voltage
+    vvals = np.interp(tvals, t, v)  # Interpolates & creates array of voltages from beginning of spe to minimum voltage
+
+    time = tvals[np.argmin(np.abs(vvals - val))]        # Finds time
+
+    return time
+
+
+# DOING CALCULATIONS
+
+
+def make_array():
+    my_array = np.array([])
+
+
+
+
+# Calculates beginning & end times of spe waveform, charge, amplitude, fwhm, 10-90 & 20-80 rise times, 10-90 & 20-80
+# fall times, and 10%, 20%, 80% & 90% jitter for each spe file
+# Returns arrays of beginning & end times of spe waveform, charge, amplitude, fwhm, 10-90 & 20-80 rise times, 10-90 &
+# 20-80 fall times, and 10%, 20%, 80% & 90% jitter
+def make_arrays(save_shift, dest_path, data_sort, start, end, nhdr, r):
+    t1_array = np.array([])
+    t2_array = np.array([])
+    charge_array = np.array([])
+    amplitude_array = np.array([])
+    fwhm_array = np.array([])
+    rise1090_array = np.array([])
+    rise2080_array = np.array([])
+    fall1090_array = np.array([])
+    fall2080_array = np.array([])
+    time10_array = np.array([])
+    time20_array = np.array([])
+    time80_array = np.array([])
+    time90_array = np.array([])
+
+    for i in range(start, end + 1):
+        file_name1 = str(save_shift / 'D1--waveforms--%05d.txt') % i
+        file_name2 = str(dest_path / 'calculations' / 'D1--waveforms--%05d.txt') % i
+        if os.path.isfile(file_name1):
+            if os.path.isfile(file_name2):      # If the calculations were done previously, they are read from a file
+                print("Reading calculations from shifted file #%05d" % i)
+                myfile = open(file_name2, 'r')      # Opens file with calculations
+                csv_reader = csv.reader(myfile)
+                file_array = np.array([])
+                for row in csv_reader:      # Creates array with calculation data
+                    file_array = np.append(file_array, float(row[1]))
+                myfile.close()
+                t1 = file_array[0]
+                t2 = file_array[1]
+                charge = file_array[2]
+                amplitude = file_array[3]
+                fwhm = file_array[4]
+                rise1090 = file_array[5]
+                rise2080 = file_array[6]
+                fall1090 = file_array[7]
+                fall2080 = file_array[8]
+                time10 = file_array[9]
+                time20 = file_array[10]
+                time80 = file_array[11]
+                time90 = file_array[12]
+                # Any spe waveform that returns impossible values is put into the not_spe folder
+                if (charge <= 0 or amplitude <= 0 or fwhm <= 0 or rise1090 <= 0 or rise2080 <= 0 or fall1090 <= 0 or
+                        fall2080 <= 0 or time10 >= 0 or time20 >= 0 or time80 <= 0 or time90 <= 0):
+                    raw_file = str(data_sort / 'C2--waveforms--%05d.txt') % i
+                    save_file = str(dest_path / 'not_spe' / 'D1--not_spe--%05d.txt') % i
+                    t, v, hdr = rw(raw_file, nhdr)
+                    ww(t, v, save_file, hdr)
+                    print('Removing file #%05d' % i)
+                    os.remove(str(save_shift / 'D1--waveforms--%05d.txt') % i)
+                    os.remove(str(dest_path / 'd1_raw' / 'D1--waveforms--%05d.txt') % i)
+                    os.remove(str(dest_path / 'calculations' / 'D1--waveforms--%05d.txt') % i)
+                # All other spe waveforms' calculations are placed into arrays
+                else:
+                    t1_array = np.append(t1_array, t1)
+                    t2_array = np.append(t2_array, t2)
+                    charge_array = np.append(charge_array, charge)
+                    amplitude_array = np.append(amplitude_array, amplitude)
+                    fwhm_array = np.append(fwhm_array, fwhm)
+                    rise1090_array = np.append(rise1090_array, rise1090)
+                    rise2080_array = np.append(rise2080_array, rise2080)
+                    fall1090_array = np.append(fall1090_array, fall1090)
+                    fall2080_array = np.append(fall2080_array, fall2080)
+                    time10_array = np.append(time10_array, time10)
+                    time20_array = np.append(time20_array, time20)
+                    time80_array = np.append(time80_array, time80)
+                    time90_array = np.append(time90_array, time90)
+            else:           # If the calculations were not done yet, they are calculated
+                print("Calculating shifted file #%05d" % i)
+                t, v, hdr = rw(file_name1, nhdr)        # Shifted waveform file is read
+                t1, t2, charge = calculate_charge(t, v, r)      # Start & end times and charge of spe are calculated
+                amplitude = calculate_amp(t, v)     # Amplitude of spe is calculated
+                fwhm = calculate_fwhm(t, v)         # FWHM of spe is calculated
+                rise1090, rise2080 = rise_time(t, v, r)     # 10-90 & 20-80 rise times of spe are calculated
+                fall1090, fall2080 = fall_time(t, v, r)     # 10-90 & 20-80 fall times of spe are calculated
+                time10, time20, time80, time90 = calculate_times(t, v, r)   # 10%, 20%, 80% & 90% jitter is calculated
+                # Any spe waveform that returns impossible values is put into the not_spe folder
+                if (charge <= 0 or amplitude <= 0 or fwhm <= 0 or rise1090 <= 0 or rise2080 <= 0 or fall1090 <= 0 or
+                        fall2080 <= 0 or time10 >= 0 or time20 >= 0 or time80 <= 0 or time90 <= 0):
+                    raw_file = str(data_sort / 'C2--waveforms--%05d.txt') % i
+                    save_file = str(dest_path / 'not_spe' / 'D1--not_spe--%05d.txt') % i
+                    t, v, hdr = rw(raw_file, nhdr)
+                    ww(t, v, save_file, hdr)
+                    print('Removing file #%05d' % i)
+                    os.remove(str(save_shift / 'D1--waveforms--%05d.txt') % i)
+                    os.remove(str(dest_path / 'd1_raw' / 'D1--waveforms--%05d.txt') % i)
+                # All other spe waveforms' calculations are saved in a file & placed into arrays
+                else:
+                    save_calculations(dest_path, i, t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090,
+                                      fall2080, time10, time20, time80, time90)
+                    t1_array = np.append(t1_array, t1)
+                    t2_array = np.append(t2_array, t2)
+                    charge_array = np.append(charge_array, charge)
+                    amplitude_array = np.append(amplitude_array, amplitude)
+                    fwhm_array = np.append(fwhm_array, fwhm)
+                    rise1090_array = np.append(rise1090_array, rise1090)
+                    rise2080_array = np.append(rise2080_array, rise2080)
+                    fall1090_array = np.append(fall1090_array, fall1090)
+                    fall2080_array = np.append(fall2080_array, fall2080)
+                    time10_array = np.append(time10_array, time10)
+                    time20_array = np.append(time20_array, time20)
+                    time80_array = np.append(time80_array, time80)
+                    time90_array = np.append(time90_array, time90)
+
+    return t1_array, t2_array, charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, \
+        fall1090_array, fall2080_array, time10_array, time20_array, time80_array, time90_array
+
+
