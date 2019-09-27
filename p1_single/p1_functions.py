@@ -86,6 +86,31 @@ def check_if_file(path, file_name):
         return 'no'
 
 
+# Reads calculations from existing file
+def read_calc(filename):
+    myfile = open(filename, 'r')  # Opens file with calculations
+    csv_reader = csv.reader(myfile)
+    file_array = np.array([])
+    for row in csv_reader:  # Creates array with calculation data
+        file_array = np.append(file_array, float(row[1]))
+    myfile.close()
+    t1 = file_array[0]
+    t2 = file_array[1]
+    charge = file_array[2]
+    amp = file_array[3]
+    fwhm = file_array[4]
+    rise1090 = file_array[5]
+    rise2080 = file_array[6]
+    fall1090 = file_array[7]
+    fall2080 = file_array[8]
+    j10 = file_array[9]
+    j20 = file_array[10]
+    j80 = file_array[11]
+    j90 = file_array[12]
+
+    return t1, t2, charge, amp, fwhm, rise1090, rise2080, fall1090, fall2080, j10, j20, j80, j90
+
+
 # CALCULATIONS
 
 
@@ -272,8 +297,33 @@ def calculate_jitter(t, v, per):
 # DOING CALCULATIONS
 
 
+# Checks if calculated values are possible or not
+def check_if_impossible(t1, t2, charge, amp, fwhm, rise1090, rise2080, fall1090, fall2080, j10, j20, j80, j90):
+    if (t1 < 0 or t2 <= t1 or charge <= 0 or amp <= 0 or fwhm <= 0 or rise1090 <= 0 or rise2080 <= 0 or fall1090 <= 0 or
+            fall2080 <= 0 or j10 >= 0 or j20 >= 0 or j80 <= 0 or j90 <= 0):
+        return 'impossible'
+    else:
+        return 'ok'
+
+
+# Creates array for a calculation
 def make_array():
     my_array = np.array([])
+
+
+
+    return my_array
+
+
+# Removes spe waveform from all spe folders
+def remove_spe(path_1, path_2, number, nhdr):
+    t, v, hdr = rw(str(path_1 / 'C2--waveforms--%05d.txt') % number, nhdr)
+    ww(t, v, str(path_2 / 'not_spe' / 'D1--not_spe--%05d.txt') % number, hdr)
+    if 
+
+    os.remove(str(save_shift / 'D1--waveforms--%05d.txt') % i)
+    os.remove(str(dest_path / 'd1_raw' / 'D1--waveforms--%05d.txt') % i)
+    os.remove(str(dest_path / 'calculations' / 'D1--waveforms--%05d.txt') % i)
 
 
 
@@ -302,29 +352,12 @@ def make_arrays(save_shift, dest_path, data_sort, start, end, nhdr, r):
         file_name2 = str(dest_path / 'calculations' / 'D1--waveforms--%05d.txt') % i
         if os.path.isfile(file_name1):
             if os.path.isfile(file_name2):      # If the calculations were done previously, they are read from a file
-                print("Reading calculations from shifted file #%05d" % i)
-                myfile = open(file_name2, 'r')      # Opens file with calculations
-                csv_reader = csv.reader(myfile)
-                file_array = np.array([])
-                for row in csv_reader:      # Creates array with calculation data
-                    file_array = np.append(file_array, float(row[1]))
-                myfile.close()
-                t1 = file_array[0]
-                t2 = file_array[1]
-                charge = file_array[2]
-                amplitude = file_array[3]
-                fwhm = file_array[4]
-                rise1090 = file_array[5]
-                rise2080 = file_array[6]
-                fall1090 = file_array[7]
-                fall2080 = file_array[8]
-                time10 = file_array[9]
-                time20 = file_array[10]
-                time80 = file_array[11]
-                time90 = file_array[12]
+                t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10, time20, time80, time90\
+                    = read_calc(file_name2)
+                possibility = check_if_impossible(t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090,
+                                                  fall2080, time10, time20, time80, time90)
                 # Any spe waveform that returns impossible values is put into the not_spe folder
-                if (charge <= 0 or amplitude <= 0 or fwhm <= 0 or rise1090 <= 0 or rise2080 <= 0 or fall1090 <= 0 or
-                        fall2080 <= 0 or time10 >= 0 or time20 >= 0 or time80 <= 0 or time90 <= 0):
+                if possibility == 'impossible':
                     raw_file = str(data_sort / 'C2--waveforms--%05d.txt') % i
                     save_file = str(dest_path / 'not_spe' / 'D1--not_spe--%05d.txt') % i
                     t, v, hdr = rw(raw_file, nhdr)
@@ -357,9 +390,10 @@ def make_arrays(save_shift, dest_path, data_sort, start, end, nhdr, r):
                 rise1090, rise2080 = rise_time(t, v, r)     # 10-90 & 20-80 rise times of spe are calculated
                 fall1090, fall2080 = fall_time(t, v, r)     # 10-90 & 20-80 fall times of spe are calculated
                 time10, time20, time80, time90 = calculate_times(t, v, r)   # 10%, 20%, 80% & 90% jitter is calculated
+                possibility = check_if_impossible(t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090,
+                                                  fall2080, time10, time20, time80, time90)
                 # Any spe waveform that returns impossible values is put into the not_spe folder
-                if (charge <= 0 or amplitude <= 0 or fwhm <= 0 or rise1090 <= 0 or rise2080 <= 0 or fall1090 <= 0 or
-                        fall2080 <= 0 or time10 >= 0 or time20 >= 0 or time80 <= 0 or time90 <= 0):
+                if possibility == 'impossible':
                     raw_file = str(data_sort / 'C2--waveforms--%05d.txt') % i
                     save_file = str(dest_path / 'not_spe' / 'D1--not_spe--%05d.txt') % i
                     t, v, hdr = rw(raw_file, nhdr)
