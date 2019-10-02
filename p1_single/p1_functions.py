@@ -319,7 +319,7 @@ def make_array():
 def remove_spe(path_1, path_2, number, nhdr):
     t, v, hdr = rw(str(path_1 / 'C2--waveforms--%05d.txt') % number, nhdr)
     ww(t, v, str(path_2 / 'not_spe' / 'D1--not_spe--%05d.txt') % number, hdr)
-    if 
+    if
 
     os.remove(str(save_shift / 'D1--waveforms--%05d.txt') % i)
     os.remove(str(dest_path / 'd1_raw' / 'D1--waveforms--%05d.txt') % i)
