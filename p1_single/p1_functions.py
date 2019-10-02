@@ -1,10 +1,12 @@
 import os
 import csv
+import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 from scipy.optimize import curve_fit
 from scipy.stats import norm
+from scipy import signal
 
 # FILE READING/WRITING
 
@@ -109,6 +111,107 @@ def read_calc(filename):
     j90 = file_array[12]
 
     return t1, t2, charge, amp, fwhm, rise1090, rise2080, fall1090, fall2080, j10, j20, j80, j90
+
+
+# Creates info file
+def info_file(acq_date_time, source_path, dest_path, pmt_hv, gain, offset, trig_delay, amp, fsps, band, nfilter, r):
+    now = datetime.datetime.now()
+    file_name = 'info.txt'
+    file = dest_path / file_name
+    myfile = open(file, 'w')
+    myfile.write('Data acquisition,' + str(acq_date_time))              # date & time of raw data from d0 info file
+    myfile.write('\nData processing,' + str(now))                       # current date & time
+    myfile.write('\nSource data,' + str(source_path))                   # path to source data
+    myfile.write('\nDestination data,' + str(dest_path))                # path to folder of current data
+    myfile.write('\nPMT HV (V),' + str(pmt_hv))                         # voltage of PMT from d0 info file
+    myfile.write('\nNominal gain,' + str(gain))                         # gain of PMT from d0 info file
+    myfile.write('\nDG 535 offset,' + str(offset))                      # offset of pulse generator from d0 info file
+    myfile.write('\nDG 535 trigger delay (ns),' + str(trig_delay))      # trigger delay of pulse generator from d0 info
+                                                                        # file
+    myfile.write('\nDG 535 amplitude (V),' + str(amp))                  # amplitude of pulse generator from d0 info file
+    myfile.write('\nOscilloscope sample rate (Hz),' + str(fsps))        # sample rate of oscilloscope from d0 info file
+    myfile.write('\nOscilloscope bandwidth (Hz),' + str(band))          # bandwidth of oscilloscope from d0 info file
+    myfile.write('\nOscilloscope noise filter (bits),' + str(nfilter))  # oscilloscope noise filter from d0 info file
+    myfile.write('\nOscilloscope resistance (ohms),' + str(r))          # resistance of oscilloscope from d0 info file
+    myfile.close()
+
+
+# SORT WAVEFORMS
+
+
+# Separates files into spe, non-spe, and maybe spe
+def p1_sort(file_num, nhdr, fsps, fc, numtaps, data_path, save_path, baseline):
+    wc = 2. * np.pi * fc / fsps     # Discrete radial frequency
+    lowpass = signal.firwin(numtaps, cutoff=wc/np.pi, window='blackman')    # Blackman windowed lowpass filter
+
+    file_name = str(data_path / 'C2--waveforms--%05d.txt') % file_num
+    spe_name = str(save_path / 'd1/d1_raw/D1--waveforms--%05d.txt') % file_num
+    spe_not_there = str(save_path / 'd1/not_spe/D1--not_spe--%05d.txt') % file_num
+    spe_unsure = str(save_path / 'd1/unsure_if_spe/D1--unsure--%05d.txt') % file_num
+
+    if os.path.isfile(spe_name):    # If file has already been sorted, does not sort it again
+        pass
+    elif os.path.isfile(spe_not_there):     # If file has already been sorted, does not sort it again
+        pass
+    elif os.path.isfile(spe_unsure):        # If file has already been sorted, does not sort it again
+        pass
+    else:                           # If file has not been sorted, sorts it
+        t, v, hdr = rw(file_name, nhdr)     # Reads waveform file
+
+        v1 = signal.filtfilt(lowpass, 1.0, v - baseline)        # Applies lowpass filter to voltage array
+        v2 = v1[numtaps:len(v1)-1]          # Splices voltage array
+        t2 = t[numtaps:len(v1)-1]           # Splices time array
+
+        v_flip = -1 * v2            # Flips voltage array so spe is positive
+        peaks, _ = signal.find_peaks(v_flip, 0.001)     # Finds indices of peaks above 0.001 V
+        v_peaks = v2[peaks]         # Creates list of voltages where peaks above 0.001 V occur
+        t_peaks = t2[peaks]         # Creates list of times where peaks above 0.001 V occur
+        check_peaks, _ = signal.find_peaks(v_flip, [0.001, 0.0025])     # Finds peaks between 0.001 V & 0.0025 V
+        v_check = v2[check_peaks]   # Creates list of times where peaks between 0.001 V & 0.0025 V occur
+
+        # If no peaks larger than 0.001 V, no spe
+        if len(peaks) == 0:
+            ww(t2, v2, spe_not_there, hdr)      # Writes filtered waveform to file
+            print("Length of /d1_raw/:", len(os.listdir(str(save_path / 'd1/d1_raw/'))))
+
+        # If one peak larger than 0.001 V and it is larger than 0.002 V, spe
+        elif len(peaks) == 1 and min(v2[370:1370]) < -0.002:
+            ww(t2, v2, spe_name, hdr)           # Writes filtered waveform to file
+            print("Length of /d1_raw/:", len(os.listdir(str(save_path / 'd1/d1_raw/'))))
+
+        # If 2 or more peaks larger than 0.001 V, peak is larger than 0.005 V, and all other peaks are smaller than
+        # 0.0025, spe
+        elif len(peaks) >= 2 and min(v2[370:1370]) < -0.005 and len(peaks) - 1 == len(v_check):
+            ww(t2, v2, spe_name, hdr)           # Writes filtered waveform to file
+            print("Length of /d1_raw/:", len(os.listdir(str(save_path / 'd1/d1_raw/'))))
+
+        # Otherwise, plots waveform for user to sort manually
+        else:
+            plt.figure()
+            plt.plot(t, v, 'b')         # Plots unfiltered waveform
+            plt.plot(t2, v2 + baseline, 'r', linewidth=2.5)         # Plots filtered waveform
+            plt.plot(t_peaks, v_peaks + baseline, 'x', color='cyan')        # Plots peaks
+            plt.title('File #%05d' % file_num)
+            plt.xlabel('Time (s)')
+            plt.ylabel('Voltage (V)')
+            plt.grid(True)
+            print('Displaying file #%05d' % file_num)
+            plt.show(block=False)
+
+            spe_check = 'pre-loop initialization'
+            while spe_check != 'y' and spe_check != 'n' and spe_check != 'u':
+                spe_check = input('Is there a single visible SPE? "y", "n", or "u"\n')
+            if spe_check == 'y':
+                ww(t2, v2, spe_name, hdr)           # Writes filtered waveform to file
+            elif spe_check == 'n':
+                ww(t2, v2, spe_not_there, hdr)      # Writes filtered waveform to file
+            elif spe_check == 'u':
+                ww(t2, v2, spe_unsure, hdr)         # Writes filtered waveform to file
+            print('file #%05d: Done' % file_num)
+            print("Length of /d1_raw/:", len(os.listdir(str(save_path / 'd1/d1_raw/'))))
+            plt.close()
+
+    return
 
 
 # CALCULATIONS
@@ -306,33 +409,9 @@ def check_if_impossible(t1, t2, charge, amp, fwhm, rise1090, rise2080, fall1090,
         return 'ok'
 
 
-# Creates array for a calculation
-def make_array():
-    my_array = np.array([])
+# Creates empty arrays for calculations
+def initialize_arrays():
 
-
-
-    return my_array
-
-
-# Removes spe waveform from all spe folders
-def remove_spe(path_1, path_2, number, nhdr):
-    t, v, hdr = rw(str(path_1 / 'C2--waveforms--%05d.txt') % number, nhdr)
-    ww(t, v, str(path_2 / 'not_spe' / 'D1--not_spe--%05d.txt') % number, hdr)
-    if
-
-    os.remove(str(save_shift / 'D1--waveforms--%05d.txt') % i)
-    os.remove(str(dest_path / 'd1_raw' / 'D1--waveforms--%05d.txt') % i)
-    os.remove(str(dest_path / 'calculations' / 'D1--waveforms--%05d.txt') % i)
-
-
-
-
-# Calculates beginning & end times of spe waveform, charge, amplitude, fwhm, 10-90 & 20-80 rise times, 10-90 & 20-80
-# fall times, and 10%, 20%, 80% & 90% jitter for each spe file
-# Returns arrays of beginning & end times of spe waveform, charge, amplitude, fwhm, 10-90 & 20-80 rise times, 10-90 &
-# 20-80 fall times, and 10%, 20%, 80% & 90% jitter
-def make_arrays(save_shift, dest_path, data_sort, start, end, nhdr, r):
     t1_array = np.array([])
     t2_array = np.array([])
     charge_array = np.array([])
@@ -347,79 +426,246 @@ def make_arrays(save_shift, dest_path, data_sort, start, end, nhdr, r):
     time80_array = np.array([])
     time90_array = np.array([])
 
-    for i in range(start, end + 1):
-        file_name1 = str(save_shift / 'D1--waveforms--%05d.txt') % i
-        file_name2 = str(dest_path / 'calculations' / 'D1--waveforms--%05d.txt') % i
-        if os.path.isfile(file_name1):
-            if os.path.isfile(file_name2):      # If the calculations were done previously, they are read from a file
-                t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10, time20, time80, time90\
-                    = read_calc(file_name2)
-                possibility = check_if_impossible(t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090,
-                                                  fall2080, time10, time20, time80, time90)
-                # Any spe waveform that returns impossible values is put into the not_spe folder
-                if possibility == 'impossible':
-                    raw_file = str(data_sort / 'C2--waveforms--%05d.txt') % i
-                    save_file = str(dest_path / 'not_spe' / 'D1--not_spe--%05d.txt') % i
-                    t, v, hdr = rw(raw_file, nhdr)
-                    ww(t, v, save_file, hdr)
-                    print('Removing file #%05d' % i)
-                    os.remove(str(save_shift / 'D1--waveforms--%05d.txt') % i)
-                    os.remove(str(dest_path / 'd1_raw' / 'D1--waveforms--%05d.txt') % i)
-                    os.remove(str(dest_path / 'calculations' / 'D1--waveforms--%05d.txt') % i)
-                # All other spe waveforms' calculations are placed into arrays
-                else:
-                    t1_array = np.append(t1_array, t1)
-                    t2_array = np.append(t2_array, t2)
-                    charge_array = np.append(charge_array, charge)
-                    amplitude_array = np.append(amplitude_array, amplitude)
-                    fwhm_array = np.append(fwhm_array, fwhm)
-                    rise1090_array = np.append(rise1090_array, rise1090)
-                    rise2080_array = np.append(rise2080_array, rise2080)
-                    fall1090_array = np.append(fall1090_array, fall1090)
-                    fall2080_array = np.append(fall2080_array, fall2080)
-                    time10_array = np.append(time10_array, time10)
-                    time20_array = np.append(time20_array, time20)
-                    time80_array = np.append(time80_array, time80)
-                    time90_array = np.append(time90_array, time90)
-            else:           # If the calculations were not done yet, they are calculated
-                print("Calculating shifted file #%05d" % i)
-                t, v, hdr = rw(file_name1, nhdr)        # Shifted waveform file is read
-                t1, t2, charge = calculate_charge(t, v, r)      # Start & end times and charge of spe are calculated
-                amplitude = calculate_amp(t, v)     # Amplitude of spe is calculated
-                fwhm = calculate_fwhm(t, v)         # FWHM of spe is calculated
-                rise1090, rise2080 = rise_time(t, v, r)     # 10-90 & 20-80 rise times of spe are calculated
-                fall1090, fall2080 = fall_time(t, v, r)     # 10-90 & 20-80 fall times of spe are calculated
-                time10, time20, time80, time90 = calculate_times(t, v, r)   # 10%, 20%, 80% & 90% jitter is calculated
-                possibility = check_if_impossible(t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090,
-                                                  fall2080, time10, time20, time80, time90)
-                # Any spe waveform that returns impossible values is put into the not_spe folder
-                if possibility == 'impossible':
-                    raw_file = str(data_sort / 'C2--waveforms--%05d.txt') % i
-                    save_file = str(dest_path / 'not_spe' / 'D1--not_spe--%05d.txt') % i
-                    t, v, hdr = rw(raw_file, nhdr)
-                    ww(t, v, save_file, hdr)
-                    print('Removing file #%05d' % i)
-                    os.remove(str(save_shift / 'D1--waveforms--%05d.txt') % i)
-                    os.remove(str(dest_path / 'd1_raw' / 'D1--waveforms--%05d.txt') % i)
-                # All other spe waveforms' calculations are saved in a file & placed into arrays
-                else:
-                    save_calculations(dest_path, i, t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090,
-                                      fall2080, time10, time20, time80, time90)
-                    t1_array = np.append(t1_array, t1)
-                    t2_array = np.append(t2_array, t2)
-                    charge_array = np.append(charge_array, charge)
-                    amplitude_array = np.append(amplitude_array, amplitude)
-                    fwhm_array = np.append(fwhm_array, fwhm)
-                    rise1090_array = np.append(rise1090_array, rise1090)
-                    rise2080_array = np.append(rise2080_array, rise2080)
-                    fall1090_array = np.append(fall1090_array, fall1090)
-                    fall2080_array = np.append(fall2080_array, fall2080)
-                    time10_array = np.append(time10_array, time10)
-                    time20_array = np.append(time20_array, time20)
-                    time80_array = np.append(time80_array, time80)
-                    time90_array = np.append(time90_array, time90)
+    return t1_array, t2_array, charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, \
+        fall1090_array, fall2080_array, time10_array, time20_array, time80_array, time90_array
+
+
+# Creates array for a calculation
+def append_arrays(t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10, time20, time80,
+                  time90, t1_array, t2_array, charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array,
+                  fall1090_array, fall2080_array, time10_array, time20_array, time80_array, time90_array):
+
+    t1_array = np.append(t1_array, t1)
+    t2_array = np.append(t2_array, t2)
+    charge_array = np.append(charge_array, charge)
+    amplitude_array = np.append(amplitude_array, amplitude)
+    fwhm_array = np.append(fwhm_array, fwhm)
+    rise1090_array = np.append(rise1090_array, rise1090)
+    rise2080_array = np.append(rise2080_array, rise2080)
+    fall1090_array = np.append(fall1090_array, fall1090)
+    fall2080_array = np.append(fall2080_array, fall2080)
+    time10_array = np.append(time10_array, time10)
+    time20_array = np.append(time20_array, time20)
+    time80_array = np.append(time80_array, time80)
+    time90_array = np.append(time90_array, time90)
 
     return t1_array, t2_array, charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, \
         fall1090_array, fall2080_array, time10_array, time20_array, time80_array, time90_array
 
 
+# Removes spe waveform from all spe folders
+def remove_spe(path_1, path_2, path_3, number, nhdr):
+    t, v, hdr = rw(str(path_1 / 'C2--waveforms--%05d.txt') % number, nhdr)
+    ww(t, v, str(path_2 / 'not_spe' / 'D1--not_spe--%05d.txt') % number, hdr)
+    if os.path.isfile(str(path_3 / 'D1--waveforms--%05d.txt') % number):
+        os.remove(str(path_3 / 'D1--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(path_2 / 'd1_raw' / 'D1--waveforms--%05d.txt') % number):
+        os.remove(str(path_2 / 'd1_raw' / 'D1--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(path_2 / 'calculations' / 'D1--waveforms--%05d.txt') % number):
+        os.remove(str(path_2 / 'calculations' / 'D1--waveforms--%05d.txt') % number)
+
+
+# Calculates beginning & end times of spe waveform, charge, amplitude, fwhm, 10-90 & 20-80 rise times, 10-90 & 20-80
+# fall times, and 10%, 20%, 80% & 90% jitter
+def calculations(t, v, r):
+    charge = calculate_charge(t, v, r)
+    t1, t2 = calculate_t1_t2(t, v)
+    amp = calculate_amp(t, v)
+    fwhm = calculate_fwhm(t, v)
+    rt1090 = rise_time(t, v, 10, 90)
+    ft1090 = fall_time(t, v, 10, 90)
+    rt2080 = rise_time(t, v, 20, 80)
+    ft2080 = fall_time(t, v, 20, 80)
+    j10 = calculate_jitter(t, v, 10)
+    j20 = calculate_jitter(t, v, 20)
+    j80 = calculate_jitter(t, v, 80)
+    j90 = calculate_jitter(t, v, 90)
+
+    return t1, t2, charge, amp, fwhm, rt1090, rt2080, ft1090, ft2080, j10, j20, j80, j90
+
+
+# Reads calculations from an existing file and checks if they are possible values
+def read_calculations(filename):
+    t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10, time20, time80, time90 = \
+        read_calc(filename)
+    possibility = check_if_impossible(t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090,
+                                      fall2080, time10, time20, time80, time90)
+
+    return t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10, time20, time80, time90, \
+        possibility
+
+
+# Removes spe file if values are impossible, appends values to arrays if not, and creates calculations file if it does
+# not already exist
+def create_arrays(calc_file, path_1, path_2, path_3, number, t1_array, t2_array, charge_array, amplitude_array,
+                  fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array, time10_array,
+                  time20_array, time80_array, time90_array, t1, t2, charge, amplitude, fwhm, rise1090, rise2080,
+                  fall1090, fall2080, time10, time20, time80, time90, possibility, nhdr):
+
+    # Any spe waveform that returns impossible values is put into the not_spe folder
+    if possibility == 'impossible':
+        print('Removing file #%05d' % number)
+        remove_spe(path_1, path_2, path_3, number, nhdr)
+
+    # All other spe waveforms' calculations are placed into arrays
+    else:
+        t1_array, t2_array, charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, \
+            fall2080_array, time10_array, time20_array, time80_array, time90_array = \
+            append_arrays(t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10, time20,
+                          time80, time90, t1_array, t2_array, charge_array, amplitude_array, fwhm_array, rise1090_array,
+                          rise2080_array, fall1090_array, fall2080_array, time10_array, time20_array, time80_array,
+                          time90_array)
+        if not os.path.isfile(calc_file):
+            save_calculations(path_2, number, t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080,
+                              time10, time20, time80, time90)
+
+    return t1_array, t2_array, charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, \
+        fall1090_array, fall2080_array, time10_array, time20_array, time80_array, time90_array
+
+
+# Calculates beginning & end times of spe waveform, charge, amplitude, fwhm, 10-90 & 20-80 rise times, 10-90 & 20-80
+# fall times, and 10%, 20%, 80% & 90% jitter for each spe file
+# Returns arrays of beginning & end times of spe waveform, charge, amplitude, fwhm, 10-90 & 20-80 rise times, 10-90 &
+# 20-80 fall times, and 10%, 20%, 80% & 90% jitter
+def make_arrays(save_shift, dest_path, data_sort, start, end, nhdr, r):
+    t1_array, t2_array, charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, \
+        fall2080_array, time10_array, time20_array, time80_array, time90_array = initialize_arrays()
+
+    for i in range(start, end + 1):
+        file_name1 = str(save_shift / 'D1--waveforms--%05d.txt') % i
+        file_name2 = str(dest_path / 'calculations' / 'D1--waveforms--%05d.txt') % i
+
+        if os.path.isfile(file_name1):
+            # If the calculations were done previously, they are read from a file
+            if os.path.isfile(file_name2):
+                print("Reading calculations from file #%05d" % i)
+                t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10, time20, time80, \
+                    time90, possibility = read_calculations(file_name2)
+            # If the calculations were not done yet, they are calculated
+            else:
+                print("Calculating shifted file #%05d" % i)
+                t, v, hdr = rw(file_name1, nhdr)        # Shifted waveform file is read
+                t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10, time20, time80, time90\
+                    = calculations(t, v, r)             # Calculations are done
+                possibility = check_if_impossible(t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090,
+                                                  fall2080, time10, time20, time80, time90)
+
+            t1_array, t2_array, charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, \
+                fall1090_array, fall2080_array, time10_array, time20_array, time80_array, time90_array = \
+                create_arrays(file_name2, data_sort, dest_path, save_shift, i, t1_array, t2_array, charge_array,
+                              amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array,
+                              fall2080_array, time10_array, time20_array, time80_array, time90_array, t1, t2, charge,
+                              amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10, time20, time80, time90,
+                              possibility, nhdr)
+
+    return t1_array, t2_array, charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, \
+        fall1090_array, fall2080_array, time10_array, time20_array, time80_array, time90_array
+
+
+# HISTOGRAMS
+
+
+# Defines Gaussian function (a is amplitude, b is mean, c is standard deviation)
+def func(x, a, b, c):
+    gauss = a * np.exp(-(x - b) ** 2.0 / (2 * c ** 2))
+    return gauss
+
+
+# Finds Gaussian fit of array
+def gauss_fit(array, bins, n):
+    b_est, c_est = norm.fit(array)      # Calculates mean & standard deviation based on entire array
+    range_min1 = b_est - c_est          # Calculates lower limit of Gaussian fit (1sigma estimation)
+    range_max1 = b_est + c_est          # Calculates upper limit of Gaussian fit (1sigma estimation)
+    bins_range1 = np.linspace(range_min1, range_max1, 10000)    # Creates array of bins between upper & lower limits
+    n_range1 = np.interp(bins_range1, bins, n)                  # Interpolates & creates array of y axis values
+    guess1 = [1, float(b_est), float(c_est)]                    # Defines guess for values of a, b & c in Gaussian fit
+    popt1, pcov1 = curve_fit(func, bins_range1, n_range1, p0=guess1, maxfev=10000)      # Finds Gaussian fit
+    mu1 = float(format(popt1[1], '.2e'))                        # Calculates mean based on 1sigma guess
+    sigma1 = np.abs(float(format(popt1[2], '.2e')))     # Calculates standard deviation based on 1sigma estimation
+    range_min2 = mu1 - 2 * sigma1                       # Calculates lower limit of Gaussian fit (2sigma)
+    range_max2 = mu1 + 2 * sigma1                       # Calculates upper limit of Gaussian fit (2sigma)
+    bins_range2 = np.linspace(range_min2, range_max2, 10000)    # Creates array of bins between upper & lower limits
+    n_range2 = np.interp(bins_range2, bins, n)          # Interpolates & creates array of y axis values
+    guess2 = [1, mu1, sigma1]                           # Defines guess for values of a, b & c in Gaussian fit
+    popt2, pcov2 = curve_fit(func, bins_range2, n_range2, p0=guess2, maxfev=10000)      # Finds Gaussian fit
+
+    return bins_range2, popt2, pcov2
+
+
+# Creates histogram given an array
+def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename):
+
+    path = Path(dest_path / 'plots')
+    n, bins, patches = plt.hist(array, nbins)           # Plots histogram
+    bins = np.delete(bins, len(bins) - 1)
+    bins_diff = bins[1] - bins[0]
+    bins = np.linspace(bins[0] + bins_diff / 2, bins[len(bins) - 1] + bins_diff / 2, len(bins))
+
+    bins_range, popt, pcov = gauss_fit(array, bins, n)                  # Finds Gaussian fit
+    plt.plot(bins_range, func(bins_range, *popt), color='red')          # Plots Gaussian fit (mean +/- 2sigma)
+
+    mu2 = float(format(popt[1], '.2e'))                 # Calculates mean
+    sigma2 = np.abs(float(format(popt[2], '.2e')))      # Calculates standard deviation
+
+    plt.xlabel(xaxis + ' (' + units + ')')
+    plt.title(title + ' of SPE\n mean: ' + str(mu2) + ' ' + units + ', SD: ' + str(sigma2) + ' ' + units)
+    plt.savefig(path / str(filename + '.png'), dpi=360)         # Plots histogram with Gaussian fit
+
+    write_hist_data(array, dest_path, filename + '.txt')
+
+
+# AVERAGE WAVEFORM
+
+
+# Calculates average waveform of spe
+def average_waveform(start, end, dest_path, nhdr):
+    data_file = Path(dest_path / 'd1_shifted')
+    save_file = Path(dest_path / 'plots')
+    tsum = 0
+    vsum = 0
+    n = 0
+    for i in range(start, end + 1):
+        file_name = 'D1--waveforms--%05d.txt' % i
+        if os.path.isfile(data_file / file_name):
+            print('Reading file #', i)
+            t, v, hdr = rw(data_file / file_name, nhdr)     # Reads a waveform file
+            v = v / min(v)                                  # Normalizes voltages
+            idx = np.where(t == 0)                          # Finds index of t = 0 point
+            idx = int(idx[0])
+            t = np.roll(t, -idx)                            # Rolls time array so that t = 0 point is at index 0
+            v = np.roll(v, -idx)                            # Rolls voltage array so that 50% max point is at index 0
+            idx2 = np.where(t == min(t))                    # Finds index of point of minimum t
+            idx2 = int(idx2[0])
+            idx3 = np.where(t == max(t))                    # Finds index of point of maximum t
+            idx3 = int(idx3[0])
+            # Only averages waveform files that have enough points before t = 0 & after the spe
+            if idx2 <= 3430:
+                # Removes points between point of maximum t & chosen minimum t in time & voltage arrays
+                t = np.concatenate((t[:idx3], t[3430:]))
+                v = np.concatenate((v[:idx3], v[3430:]))
+                # Rolls time & voltage arrays so that point of chosen minimum t is at index 0
+                t = np.roll(t, -idx3)
+                v = np.roll(v, -idx3)
+                if len(t) >= 3920:
+                    # Removes points after chosen point of maximum t in time & voltage arrays
+                    t = t[:3920]
+                    v = v[:3920]
+                    # Sums time & voltage arrays
+                    tsum += t
+                    vsum += v
+                    n += 1
+    # Finds average time & voltage arrays
+    t_avg = tsum / n
+    v_avg = vsum / n
+
+    # Plots average waveform & saves image
+    plt.plot(t_avg, v_avg)
+    plt.xlabel('Time (s)')
+    plt.ylabel('Normalized Voltage')
+    plt.title('Average Waveform')
+    plt.savefig(save_file / 'avg_waveform.png', dpi=360)
+
+    # Saves average waveform data
+    file_name = dest_path / 'hist_data' / 'avg_waveform.txt'
+    hdr = 'Average Waveform\n\n\n\nTime,Ampl'
+    ww(t_avg, v_avg, file_name, hdr)
