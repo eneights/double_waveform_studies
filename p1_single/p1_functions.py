@@ -811,3 +811,57 @@ def check_vals(fwhm, charge, fall, amp, mean_fwhm, mean_charge, mean_fall, mean_
 
     return possibility
 
+
+# Sorts whether waveform is spe for p1b
+def p1b_sort(i, nhdr, jitter_array, p1b_spe_array, file_path_shift, file_path_shift_d1b, file_path_not_spe):
+    val = 0
+    for j in range(len(jitter_array)):
+        if jitter_array[j] == i:
+            val = 1
+    if val == 1:  # If a file had unreasonable jitter times, plots waveform for user to sort manually
+        t, v, hdr = rw(str(file_path_shift / 'D1--waveforms--%05d.txt') % i, nhdr)  # Reads waveform
+        print('Displaying file #%05d' % i)
+        plt.figure()
+        plt.plot(t, v)
+        plt.title('File #%05d' % i)
+        plt.xlabel('Time (s)')
+        plt.ylabel('Voltage (V)')
+        plt.show()
+        spe_check = 'pre-loop initialization'
+        while spe_check != 'y' and spe_check != 'n' and spe_check != 'u':
+            spe_check = input('Is this a normal SPE? "y" or "n"\n')
+        if spe_check == 'y':
+            print('File #%05d is spe' % i)
+            ww(t, v, str(file_path_shift_d1b / 'D1--waveforms--%05d.txt') % i, hdr)
+            p1b_spe_array = np.append(p1b_spe_array, i)     # File numbers of spes are added to an array
+        elif spe_check == 'n':
+            print('File #%05d is not spe' % i)
+            ww(t, v, str(file_path_not_spe / 'D1--waveforms--%05d.txt') % i, hdr)
+        plt.close()
+    else:  # If a file did not have unreasonable jitter times, it is spe
+        t, v, hdr = rw(str(file_path_shift / 'D1--waveforms--%05d.txt') % i, nhdr)
+        ww(t, v, str(file_path_shift_d1b / 'D1--waveforms--%05d.txt') % i, hdr)
+        p1b_spe_array = np.append(p1b_spe_array, i)         # File numbers of spes are added to an array
+
+    return p1b_spe_array
+
+
+# Creates p1b calculation arrays
+def p1b_calc_arrays(charge, amp, fwhm, rise1090, rise2080, fall1090, fall2080, j10, j20, j80, j90, charge_array,
+                    amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array,
+                    time10_array, time20_array, time80_array, time90_array):
+    charge_array = np.append(charge_array, charge)
+    amplitude_array = np.append(amplitude_array, amp)
+    fwhm_array = np.append(fwhm_array, fwhm)
+    rise1090_array = np.append(rise1090_array, rise1090)
+    rise2080_array = np.append(rise2080_array, rise2080)
+    fall1090_array = np.append(fall1090_array, fall1090)
+    fall2080_array = np.append(fall2080_array, fall2080)
+    time10_array = np.append(time10_array, j10)
+    time20_array = np.append(time20_array, j20)
+    time80_array = np.append(time80_array, j80)
+    time90_array = np.append(time90_array, j90)
+
+    return charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array, \
+        time10_array, time20_array, time80_array, time90_array
+

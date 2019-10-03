@@ -26,7 +26,7 @@ def p1(start, end, date, date_time, filter_band, nhdr, fsps, fc, numtaps, baseli
     # Plots histograms of charge, amplitude, FWHM, 10-90 & 20-80 rise times, 10-90 & 20-80 fall times, and 10%, 20%, 80%
     # & 90% jitter
     p1_hist(charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array,
-            time10_array, time20_array, time80_array, time90_array, dest_path, 100, 'p1')
+            time10_array, time20_array, time80_array, time90_array, dest_path, 100, 'd1')
 
     # Creates d1 info file
     info_file(date_time, data_sort, dest_path, pmt_hv, gain, offset, trig_delay, amp, fsps, band, nfilter, r)
