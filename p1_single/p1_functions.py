@@ -88,7 +88,7 @@ def check_if_file(path, file_name):
         return 'no'
 
 
-# Reads calculations from existing file
+# Reads calculation file
 def read_calc(filename):
     myfile = open(filename, 'r')  # Opens file with calculations
     csv_reader = csv.reader(myfile)
@@ -136,7 +136,34 @@ def info_file(acq_date_time, source_path, dest_path, pmt_hv, gain, offset, trig_
     myfile.close()
 
 
-# SORT WAVEFORMS
+# Reads info file
+def read_info(myfile):
+    csv_reader = csv.reader(myfile)
+    info_array = np.array([])
+    for row in csv_reader:
+        info_array = np.append(info_array, row[1])
+    i_date_time = info_array[0]
+    i_path = info_array[1]
+    i_nhdr = int(info_array[2])
+    i_baseline = float(info_array[3])
+    i_pmt_hv = int(info_array[4])
+    i_gain = int(float(info_array[5]))
+    i_offset = int(info_array[6])
+    i_trig_delay = float(info_array[7])
+    i_amp = float(info_array[8])
+    i_fsps = float(info_array[9])
+    i_band = info_array[10]
+    i_nfilter = float(info_array[11])
+    i_r = int(info_array[12])
+    a, b, c, d, e, fol, f, i_fil_band, g = i_path.split('/')
+    i_date, watch, spe = fol.split('_')
+    i_date = int(i_date)
+
+    return i_date, i_date_time, i_fil_band, i_nhdr, i_fsps, i_baseline, i_r, i_pmt_hv, i_gain, i_offset, i_trig_delay, \
+        i_amp, i_band, i_nfilter
+
+
+# SORT/SHIFT WAVEFORMS
 
 
 # Separates files into spe, non-spe, and maybe spe
@@ -214,6 +241,30 @@ def p1_sort(file_num, nhdr, fsps, fc, numtaps, data_path, save_path, baseline):
     return
 
 
+# Shifts spes so that baseline = 0 and when t = 0, v = 50% max
+def shift_waveform(file_num, nhdr, data_path, save_path):
+    file_name = 'D1--waveforms--%05d.txt' % file_num
+
+    if os.path.isfile(data_path / file_name):
+        if os.path.isfile(save_path / file_name):           # If file has already been shifted, does nothing
+            pass
+        else:
+            t, v, hdr = rw(data_path / file_name, nhdr)     # Reads waveform file
+            half_max = min(v) / 2                           # Calculates 50% max
+            differential = np.diff(v)                       # Calculates derivative of every point in voltage array
+            difference_value = np.abs(v - half_max) # Finds difference between every point in voltage array & 50% max
+            for i in range(0, len(differential)):       # Sets every value in difference_value array with a positive
+                if differential[i] > 0:                 # derivative equal to infinity
+                    difference_value[i] = np.inf
+            index = np.argmin(difference_value)  # Finds index of closest voltage to 50% max with a negative derivative
+            half_max_time = t[index]                # Finds time at 50% max
+            t2 = t - half_max_time                  # Subtracts time of 50% max from time array
+            avg = calculate_average(t, v)           # Calculates average baseline
+            v2 = v - avg                            # Subtracts average baseline voltage from voltage array
+            ww(t2, v2, save_path / file_name, hdr)          # Writes shifted waveform to file
+            print('Length of /d1_shifted/:', len(os.listdir(str(save_path))))
+
+
 # CALCULATIONS
 
 
@@ -234,30 +285,6 @@ def calculate_average(t, v):
     average = v_sum / (idx2 - idx1)
 
     return average
-
-
-# Shifts spes so that baseline = 0 and when t = 0, v = 50% max
-def shift_waveform(file_num, nhdr, data_path, save_path):
-    file_name = 'D1--waveforms--%05d.txt' % file_num
-
-    if os.path.isfile(data_path / file_name):
-        if os.path.isfile(save_path / file_name):       # If file has already been shifted, does nothing
-            pass
-        else:
-            t, v, hdr = rw(data_path / file_name, nhdr)     # Reads waveform file
-            half_max = min(v) / 2                           # Calculates 50% max
-            differential = np.diff(v)                       # Calculates derivative of every point in voltage array
-            difference_value = np.abs(v - half_max)   # Finds difference between every point in voltage array & 50% max
-            for i in range(0, len(differential)):       # Sets every value in difference_value array with a positive
-                if differential[i] > 0:                 # derivative equal to infinity
-                    difference_value[i] = np.inf
-            index = np.argmin(difference_value)  # Finds index of closest voltage to 50% max with a negative derivative
-            half_max_time = t[index]            # Finds time at 50% max
-            t2 = t - half_max_time              # Subtracts time of 50% max from time array
-            avg = calculate_average(t, v)       # Calculates average baseline
-            v2 = v - avg                        # Subtracts average baseline voltage from voltage array
-            ww(t2, v2, save_path / file_name, hdr)      # Writes shifted waveform to file
-            print('Length of /d1_shifted/:', len(os.listdir(str(save_path))))
 
 
 # Returns charge of spe (as a positive value)
@@ -614,7 +641,23 @@ def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename):
     write_hist_data(array, dest_path, filename + '.txt')
 
 
-# AVERAGE WAVEFORM
+# Plots histograms for each calculation array
+def p1_hist(charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array,
+            time10_array, time20_array, time80_array, time90_array, dest_path, bins, version):
+    plot_histogram(charge_array, dest_path, bins, 'Charge', 'Charge', 'C', 'charge_' + version)
+    plot_histogram(amplitude_array, dest_path, bins, 'Voltage', 'Amplitude', 'V', 'amplitude_' + version)
+    plot_histogram(fwhm_array, dest_path, bins, 'Time', 'FWHM', 's', 'fwhm_' + version)
+    plot_histogram(rise1090_array, dest_path, bins, 'Time', '10-90 Rise Time', 's', 'rise1090_' + version)
+    plot_histogram(rise2080_array, dest_path, bins, 'Time', '20-80 Rise Time', 's', 'rise2080_' + version)
+    plot_histogram(fall1090_array, dest_path, bins, 'Time', '10-90 Fall Time', 's', 'fall1090_' + version)
+    plot_histogram(fall2080_array, dest_path, bins, 'Time', '20-80 Fall Time', 's', 'fall2080_' + version)
+    plot_histogram(time10_array, dest_path, bins, 'Time', '10% Jitter', 's', 'time10_' + version)
+    plot_histogram(time20_array, dest_path, bins, 'Time', '20% Jitter', 's', 'time20_' + version)
+    plot_histogram(time80_array, dest_path, bins, 'Time', '80% Jitter', 's', 'time80_' + version)
+    plot_histogram(time90_array, dest_path, bins, 'Time', '90% Jitter', 's', 'time90_' + version)
+
+
+# AVERAGE/PLOT WAVEFORM
 
 
 # Calculates average waveform of spe
@@ -669,3 +712,102 @@ def average_waveform(start, end, dest_path, nhdr):
     file_name = dest_path / 'hist_data' / 'avg_waveform.txt'
     hdr = 'Average Waveform\n\n\n\nTime,Ampl'
     ww(t_avg, v_avg, file_name, hdr)
+
+
+# Shows a waveform plot to user
+def show_waveform(file_name, version):
+    t, v, hdr = rw(file_name, 5)
+    print("\nHeader:\n\n" + str(hdr))
+    plt.plot(t, v)
+    plt.xlabel('Time (s)')
+    plt.ylabel('Voltage (V)')
+    plt.title(version + ' Waveform')
+    plt.show()
+
+
+# P1
+
+
+# Creates p1 folder names
+def initialize_folders(date, filter_band):
+    gen_path = Path(r'/Volumes/TOSHIBA EXT/data/watchman')
+    save_sort = Path(str(gen_path / '%08d_watchman_spe/waveforms/%s') % (date, filter_band))
+    data_sort = Path(save_sort / 'd0')
+    dest_path = Path(save_sort / 'd1')
+    data_shift = Path(dest_path / 'd1_raw')
+    save_shift = Path(dest_path / 'd1_shifted')
+
+    return gen_path, save_sort, data_sort, dest_path, data_shift, save_shift
+
+
+# P1B
+
+
+# Creates arrays for p1b
+def initialize_arrays_2():
+    charge_array = np.array([])
+    amplitude_array = np.array([])
+    fwhm_array = np.array([])
+    rise1090_array = np.array([])
+    rise2080_array = np.array([])
+    fall1090_array = np.array([])
+    fall2080_array = np.array([])
+    time10_array = np.array([])
+    time20_array = np.array([])
+    time80_array = np.array([])
+    time90_array = np.array([])
+    jitter_array = np.array([])
+    p1b_spe_array = np.array([])
+
+    return charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array, \
+        time10_array, time20_array, time80_array, time90_array, jitter_array, p1b_spe_array
+
+
+# Creates p1b folder names
+def initialize_folders_2(dest_path):
+    file_path_calc = Path(dest_path / 'calculations')
+    file_path_shift = Path(dest_path / 'd1_shifted')
+    file_path_shift_d1b = Path(dest_path / 'd1b_shifted')
+    file_path_not_spe = Path(dest_path / 'd1b_not_spe')
+
+    return file_path_calc, file_path_shift, file_path_shift_d1b, file_path_not_spe
+
+
+# Assigns variables to mean values of FWHM, charge, 10-90 falltime, and amplitude
+def mean_values(val1, val2, val3, val4):
+    mean_fwhm = val1
+    mean_charge = val2
+    mean_fall1090 = val3
+    mean_amplitude = val4
+
+    return mean_fwhm, mean_charge, mean_fall1090, mean_amplitude
+
+
+# Checks if jitter times are reasonable
+def check_jitter(myfile):
+    csv_reader = csv.reader(myfile)
+    file_array = np.array([])
+    for row in csv_reader:  # Creates array with calculation data
+        file_array = np.append(file_array, float(row[1]))
+    time10 = file_array[9]
+    time20 = file_array[10]
+    time80 = file_array[11]
+    time90 = file_array[12]
+
+    if time10 <= -4e-9 or time20 <= -2.5e-9 or time80 >= 2.5e-9 or time90 >= 3.5e-9:
+        possibility = 'no'
+    else:
+        possibility = 'yes'
+
+    return possibility
+
+
+# Checks if FWHM, charge, amplitude, and 10-90 fall time values are reasonable
+def check_vals(fwhm, charge, fall, amp, mean_fwhm, mean_charge, mean_fall, mean_amp):
+    if charge > 2 * mean_charge and (fwhm > 2 * mean_fwhm or fall > 2 * mean_fall or amp > 2 * mean_amp):
+        possibility = 'no'
+    else:
+        possibility = 'yes'
+
+    return possibility
+

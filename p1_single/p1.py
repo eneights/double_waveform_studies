@@ -3,12 +3,7 @@ from p1_functions import *
 
 def p1(start, end, date, date_time, filter_band, nhdr, fsps, fc, numtaps, baseline, r, pmt_hv, gain, offset, trig_delay,
        amp, band, nfilter):
-    gen_path = Path(r'/Volumes/TOSHIBA EXT/data/watchman')
-    save_sort = Path(str(gen_path / '%08d_watchman_spe/waveforms/%s') % (date, filter_band))
-    data_sort = Path(save_sort / 'd0')
-    dest_path = Path(save_sort / 'd1')
-    data_shift = Path(dest_path / 'd1_raw')
-    save_shift = Path(dest_path / 'd1_shifted')
+    gen_path, save_sort, data_sort, dest_path, data_shift, save_shift = initialize_folders(date, filter_band)
 
     # Separates spes and non-spes into different folders
     print('Sorting files...')
@@ -18,8 +13,7 @@ def p1(start, end, date, date_time, filter_band, nhdr, fsps, fc, numtaps, baseli
     # Shifts spes so that when t = 0, v = 50% max and baseline = 0
     print('Shifting waveforms...')
     for i in range(start, end + 1):
-        file_name = 'D1--waveforms--%05d.txt' % i
-        if os.path.isfile(data_shift / file_name):
+        if os.path.isfile((data_shift / 'D1--waveforms--%05d.txt') % i):
             shift_waveform(i, nhdr, data_shift, save_shift)
 
     # Creates arrays of beginning & end times of spe waveform, time of end of spe, charge, amplitude, fwhm, 10-90 &
@@ -31,17 +25,8 @@ def p1(start, end, date, date_time, filter_band, nhdr, fsps, fc, numtaps, baseli
 
     # Plots histograms of charge, amplitude, FWHM, 10-90 & 20-80 rise times, 10-90 & 20-80 fall times, and 10%, 20%, 80%
     # & 90% jitter
-    plot_histogram(charge_array, dest_path, 100, 'Charge', 'Charge', 'C', 'charge')
-    plot_histogram(amplitude_array, dest_path, 100, 'Voltage', 'Amplitude', 'V', 'amplitude')
-    plot_histogram(fwhm_array, dest_path, 100, 'Time', 'FWHM', 's', 'fwhm')
-    plot_histogram(rise1090_array, dest_path, 100, 'Time', '10-90 Rise Time', 's', 'rise1090')
-    plot_histogram(rise2080_array, dest_path, 100, 'Time', '20-80 Rise Time', 's', 'rise2080')
-    plot_histogram(fall1090_array, dest_path, 100, 'Time', '10-90 Fall Time', 's', 'fall1090')
-    plot_histogram(fall2080_array, dest_path, 100, 'Time', '20-80 Fall Time', 's', 'fall2080')
-    plot_histogram(time10_array, dest_path, 100, 'Time', '10% Jitter', 's', 'time10')
-    plot_histogram(time20_array, dest_path, 100, 'Time', '20% Jitter', 's', 'time20')
-    plot_histogram(time80_array, dest_path, 100, 'Time', '80% Jitter', 's', 'time80')
-    plot_histogram(time90_array, dest_path, 100, 'Time', '90% Jitter', 's', 'time90')
+    p1_hist(charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array,
+            time10_array, time20_array, time80_array, time90_array, dest_path, 100, 'p1')
 
     # Creates d1 info file
     info_file(date_time, data_sort, dest_path, pmt_hv, gain, offset, trig_delay, amp, fsps, band, nfilter, r)
@@ -81,27 +66,8 @@ if __name__ == '__main__':
                args.band, args.nfilter)
     else:
         myfile = open(args.info_file, 'r')
-        csv_reader = csv.reader(myfile)
-        info_array = np.array([])
-        path_array = np.array([])
-        for row in csv_reader:
-            info_array = np.append(info_array, row[1])
-        i_date_time = info_array[0]
-        i_path = info_array[1]
-        i_nhdr = int(info_array[2])
-        i_baseline = float(info_array[3])
-        i_pmt_hv = int(info_array[4])
-        i_gain = int(float(info_array[5]))
-        i_offset = int(info_array[6])
-        i_trig_delay = float(info_array[7])
-        i_amp = float(info_array[8])
-        i_fsps = float(info_array[9])
-        i_band = info_array[10]
-        i_nfilter = float(info_array[11])
-        i_r = int(info_array[12])
-        a, b, c, d, e, fol, f, i_fil_band, g = i_path.split('/')
-        i_date, watch, spe = fol.split('_')
-        i_date = int(i_date)
+        i_date, i_date_time, i_fil_band, i_nhdr, i_fsps, i_baseline, i_r, i_pmt_hv, i_gain, i_offset, i_trig_delay, \
+            i_amp, i_band, i_nfilter = read_info(myfile)
 
         p1(args.start, args.end, i_date, i_date_time, i_fil_band, i_nhdr, i_fsps, args.fc, args.numtaps,
            i_baseline, i_r, i_pmt_hv, i_gain, i_offset, i_trig_delay, i_amp, i_band, i_nfilter)
