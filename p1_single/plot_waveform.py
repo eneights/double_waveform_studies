@@ -16,7 +16,7 @@ def plot_waveform(start, end, fil_band, version, folder):
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(prog="p1", description="Creating D1")
+    parser = argparse.ArgumentParser(prog="plot_waveform", description="Plotting waveforms")
     parser.add_argument("--start", type=int, help='first file number to plot', default=0)
     parser.add_argument("--end", type=int, help='last file number to plot', default=0)
     parser.add_argument("--fil_band", type=str, help='folder name for data', default='full_bdw_no_nf')
