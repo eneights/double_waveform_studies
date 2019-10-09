@@ -174,7 +174,7 @@ def average_waveform(start, end, dest_path, nhdr):
     vsum = 0
     n = 0
     for i in range(start, end + 1):
-        file_name = 'D1--waveforms--%05d.txt' % i
+        file_name = 'D2--waveforms--%05d.txt' % i
         if os.path.isfile(data_file / file_name):
             print('Reading file #', i)
             t, v, hdr = rw(data_file / file_name, nhdr)     # Reads a waveform file
