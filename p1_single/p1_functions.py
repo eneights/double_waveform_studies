@@ -268,21 +268,59 @@ def shift_waveform(file_num, nhdr, data_path, save_path):
 # CALCULATIONS
 
 
+# Returns time when spe waveform begins and time when spe waveform ends
+def calculate_t1_t2(t, v):
+    idx1 = np.inf
+    idx2 = np.inf
+    idx3 = np.inf
+
+    for i in range(len(v)):
+        if v[i] <= 0.1 * min(v):
+            idx1 = i
+            break
+        else:
+            continue
+
+    for i in range(idx1, len(v)):
+        if v[i] == min(v):
+            idx2 = i
+            break
+        else:
+            continue
+
+    for i in range(len(v), idx2, -1):
+        if v[i] <= 0.1 * min(v):
+            idx3 = i
+            break
+        else:
+            continue
+
+    t1 = t[idx1]                    # Finds time of beginning of spe
+    t2 = t[idx3]                    # Finds time of end of spe
+
+    return t1, t2
+
+
 # Returns the average baseline (baseline noise level)
 def calculate_average(t, v):
     v_sum = 0
+    t1, t2 = calculate_t1_t2(t, v)
 
-    idx = np.where(v == min(v))     # Finds index of point of minimum voltage value
+    if t1 == 0:
+        for i in range(int(np.where(t == t2) + (.1 * len(t))), int(.9 * len(t))):
+            v_sum += v[i]
 
-    if idx > len(t) / 2:            # If minimum voltage is in second half of voltage array, calculates baseline using
-        idx1 = int(.1 * len(t))     # first half of voltage array
-        idx2 = int(.35 * len(t))
+        average = v_sum / (int(.9 * len(t)) - int(np.where(t == t2) + (.1 * len(t))))
+
     else:
-        idx1 = int(.65 * len(t))    # If minimum voltage is in first half of voltage array, calculates baseline using
-        idx2 = int(.9 * len(t))     # second half of voltage array
-    for i in range(idx1, idx2):
-        v_sum += v[i]
-    average = v_sum / (idx2 - idx1)
+        for i in range(int(.1 * len(t)), int(np.where(t == t1) - (.1 * len(t)))):
+            v_sum += v[i]
+
+        for i in range(int(np.where(t == t2) + (.1 * len(t))), int(.9 * len(t))):
+            v_sum += v[i]
+
+        average = v_sum / ((int(np.where(t == t1) - (.1 * len(t))) - int(.1 * len(t))) +
+                           (int(.9 * len(t)) - int(np.where(t == t2) + (.1 * len(t)))))
 
     return average
 
@@ -300,41 +338,6 @@ def calculate_charge(t, v, r):
     return charge
 
 
-# Returns time when spe waveform begins and time when spe waveform ends
-def calculate_t1_t2(t, v):
-    idx1 = np.inf
-    idx2 = np.inf
-
-    min_time = t[np.where(v == min(v))][0]              # Finds time of point of minimum voltage
-
-    tvals = np.linspace(t[0], t[len(t) - 1], 5000)      # Creates array of times over entire timespan
-    tvals1 = np.linspace(t[0], min_time, 5000)          # Creates array of times from beginning to point of min voltage
-    tvals2 = np.linspace(min_time, t[len(t) - 1], 5000)     # Creates array of times from point of min voltage to end
-    vvals1 = np.interp(tvals1, t, v)   # Interpolates & creates array of voltages from beginning to point of min voltage
-    vvals2 = np.interp(tvals2, t, v)    # Interpolates & creates array of voltages from point of min voltage to end
-    vvals1_flip = np.flip(vvals1)   # Flips array, creating array of voltages from point of min voltage to beginning
-    difference_value1 = vvals1_flip - (0.1 * min(v))    # Finds difference between points in beginning array and 10% max
-    difference_value2 = vvals2 - (0.1 * min(v))         # Finds difference between points in end array and 10% max
-
-    for i in range(0, len(difference_value1) - 1):  # Starting at point of minimum voltage and going towards beginning
-        if difference_value1[i] >= 0:               # of waveform, finds where voltage becomes greater than 10% max
-            idx1 = len(difference_value1) - i
-            break
-    if idx1 == np.inf:      # If voltage never becomes greater than 10% max, finds where voltage is closest to 10% max
-        idx1 = len(difference_value1) - 1 - np.argmin(np.abs(difference_value1))
-    for i in range(0, len(difference_value2) - 1):      # Starting at point of minimum voltage and going towards end of
-        if difference_value2[i] >= 0:                   # waveform, finds where voltage becomes greater than 10% max
-            idx2 = i
-            break
-    if idx2 == np.inf:      # If voltage never becomes greater than 10% max, finds where voltage is closest to 10% max
-        idx2 = np.argmin(np.abs(difference_value2))
-
-    t1 = tvals[np.argmin(np.abs(tvals - tvals1[idx1]))]             # Finds time of beginning of spe
-    t2 = tvals[np.argmin(np.abs(tvals - tvals2[idx2]))]             # Finds time of end of spe
-
-    return t1, t2
-
-
 # Returns the amplitude of spe as a positive value (minimum voltage)
 def calculate_amp(t, v):
     avg = calculate_average(t, v)       # Calculates value of baseline voltage
@@ -345,16 +348,33 @@ def calculate_amp(t, v):
 
 # Returns the full width half max (FWHM) of spe
 def calculate_fwhm(t, v):
-    half_max = (min(v) / 2).item()                      # Calculates 50% max value
-    tvals = np.linspace(t[0], t[len(t) - 1], 5000)      # Creates array of times over entire timespan
-    vvals = np.interp(tvals, t, v)                      # Interpolates & creates array of voltages over entire timespan
-    difference_value = np.abs(vvals - half_max)         # Finds difference between points in voltage array and 50% max
-    index_min = np.argmin(np.abs(vvals - min(v)))       # Finds index of minimum voltage in voltage array
-    for i in range(index_min.item(), len(np.diff(vvals)) - 1):  # Sets every value in difference_value array with a
-        if np.diff(vvals)[i] < 0:                               # negative differential equal to infinity
-            difference_value[i] = np.inf
-    difference_value = difference_value[index_min.item():len(vvals) - 1]
-    half_max_time = tvals[np.argmin(difference_value) + index_min.item()]   # Finds time of 50% max
+    time1 = np.inf
+    time2 = np.inf
+
+    t1, t2 = calculate_t1_t2(t, v)                      # Calculates start and end times of spe
+    avg = calculate_average(t, v)                       # Calculates average baseline
+    half_max = ((min(v) - avg) / 2).item()              # Calculates 50% max value
+
+    tvals1 = np.linspace(t1, t[np.where(v == min(v))], 2500)
+    vvals1 = np.interp(tvals1, t, v)
+    tvals2 = np.linspace(t[np.where(v == min(v))], t2, 2500)
+    vvals2 = np.interp(tvals2, t, v)
+
+    for i in range(len(vvals1)):
+        if vvals1[i] <= half_max:
+            time1 = tvals1[i]
+            break
+        else:
+            continue
+
+    for i in range(len(vvals2), 0, -1):
+        if vvals2[i] <= half_max:
+            time2 = tvals2[i]
+            break
+        else:
+            continue
+
+    half_max_time = time2 - time1
 
     return half_max_time
 
@@ -371,7 +391,7 @@ def rise_time(t, v, low, high):
     val_1 = percent_low * (min(v) - avg)        # Calculates first percent of max
     val_2 = percent_high * (min(v) - avg)       # Calculates second percent of max
 
-    tvals = np.linspace(t1, min_time, 5000) # Creates array of times from beginning of spe to point of minimum voltage
+    tvals = np.linspace(t1, min_time, 5000)   # Creates array of times from beginning of spe to point of minimum voltage
     vvals = np.interp(tvals, t, v)  # Interpolates & creates array of voltages from beginning of spe to minimum voltage
 
     time_low = tvals[np.argmin(np.abs(vvals - val_1))]          # Finds time of point of first percent of max

@@ -2,9 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b6d0dd9b-32b2-4a53-b209-2297dc882a2e" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../p2_double/p2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../p2_double/p2_functions.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../p2_double/plot_waveform.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/p1_functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/p1_functions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../p2_single/p2_functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/../p2_single/p2_functions.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -25,22 +24,22 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="13" />
+          <entry key="py" value="14" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Python" value="13" />
+          <entry key="Python" value="14" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="py" value="5717" />
+          <entry key="py" value="6694" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="5717" />
+          <entry key="Python" value="6694" />
         </counts>
       </usages-collector>
     </session>
@@ -50,13 +49,14 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/p1_functions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="923">
-              <caret line="724" column="14" selection-start-line="724" selection-start-column="14" selection-end-line="724" selection-end-column="14" />
+            <state relative-caret-position="844">
+              <caret line="320" lean-forward="true" selection-start-line="320" selection-end-line="320" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
-                <marker date="1570116486939" expanded="true" signature="5975:6842" ph="..." />
-                <marker date="1570116486939" expanded="true" signature="14150:29920" ph="..." />
-                <marker date="1570116486939" expanded="true" signature="17852:18881" ph="..." />
+                <marker date="1570669228715" expanded="true" signature="5975:6842" ph="..." />
+                <marker date="1570669228715" expanded="true" signature="13594:13599" ph="..." />
+                <marker date="1570669228715" expanded="true" signature="14839:28261" ph="..." />
+                <marker date="1570669228715" expanded="true" signature="16191:17222" ph="..." />
               </folding>
             </state>
           </provider>
@@ -70,8 +70,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../p2_single/p2_functions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="127">
-              <caret line="176" column="23" selection-start-line="176" selection-start-column="23" selection-end-line="176" selection-end-column="23" />
+            <state relative-caret-position="112">
+              <caret line="303" column="9" selection-start-line="303" selection-start-column="9" selection-end-line="303" selection-end-column="9" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -96,17 +96,17 @@
       <list>
         <option value="$PROJECT_DIR$/p1_sort.py" />
         <option value="$PROJECT_DIR$/p1.py" />
-        <option value="$PROJECT_DIR$/p1_functions.py" />
         <option value="$PROJECT_DIR$/p1b.py" />
         <option value="$PROJECT_DIR$/../p2_double/p2.py" />
         <option value="$PROJECT_DIR$/../p2_double/p2_functions.py" />
         <option value="$PROJECT_DIR$/plot_waveform.py" />
         <option value="$PROJECT_DIR$/../p2_double/plot_waveform.py" />
         <option value="$PROJECT_DIR$/../p2_single/p2_functions.py" />
+        <option value="$PROJECT_DIR$/p1_functions.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" fullScreen="true">
+  <component name="ProjectFrameBounds" extendedState="6" fullScreen="true">
     <option name="width" value="714" />
     <option name="height" value="900" />
   </component>
@@ -163,7 +163,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="0" width="1440" height="900" extended-state="0" />
+    <frame x="0" y="0" width="1440" height="900" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.121212125" />
@@ -190,13 +190,6 @@
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/p1_sort.py" />
-    <entry file="file://$PROJECT_DIR$/p1.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
-          <caret line="24" lean-forward="true" selection-start-line="24" selection-end-line="24" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/p1b.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="735">
@@ -238,28 +231,36 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../p2_single/p2_functions.py">
+    <entry file="file://$PROJECT_DIR$/p1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="127">
-          <caret line="176" column="23" selection-start-line="176" selection-start-column="23" selection-end-line="176" selection-end-column="23" />
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="360">
+          <caret line="24" lean-forward="true" selection-start-line="24" selection-end-line="24" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/../p2_single/p2.py">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/p1_functions.py">
+    <entry file="file://$PROJECT_DIR$/../p2_single/p2_functions.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="923">
-          <caret line="724" column="14" selection-start-line="724" selection-start-column="14" selection-end-line="724" selection-end-column="14" />
+        <state relative-caret-position="112">
+          <caret line="303" column="9" selection-start-line="303" selection-start-column="9" selection-end-line="303" selection-end-column="9" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
-            <marker date="1570116486939" expanded="true" signature="5975:6842" ph="..." />
-            <marker date="1570116486939" expanded="true" signature="14150:29920" ph="..." />
-            <marker date="1570116486939" expanded="true" signature="17852:18881" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/p1_functions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="844">
+          <caret line="320" lean-forward="true" selection-start-line="320" selection-end-line="320" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+            <marker date="1570669228715" expanded="true" signature="5975:6842" ph="..." />
+            <marker date="1570669228715" expanded="true" signature="13594:13599" ph="..." />
+            <marker date="1570669228715" expanded="true" signature="14839:28261" ph="..." />
+            <marker date="1570669228715" expanded="true" signature="16191:17222" ph="..." />
           </folding>
         </state>
       </provider>

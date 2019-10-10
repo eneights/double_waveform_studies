@@ -229,3 +229,112 @@ def show_waveform(file_name, version):
     plt.ylabel('Voltage (V)')
     plt.title(version + ' Waveform')
     plt.show()
+
+
+# CALCULATIONS
+
+# Puts voltage array through a lowpass filter given a tau and sample rate
+def lowpass_filter(v, tau, fsps):
+    v_filtered = np.array([])
+    alpha = 1 - np.exp(-1. / (fsps * tau))
+    for i in range(len(v)):
+        if i == 0:
+            v_filtered = np.append(v_filtered, v[i])
+        else:
+            v_filtered = np.append(v_filtered, v[i] * alpha + (1 - alpha) * v_filtered[i - 1])
+    return v_filtered
+
+
+# Calculates tau value for lowpass filter
+def calculate_tau(t, v, fsps):
+    rt_array = np.array([])
+    j_array = np.array([])
+
+    rt1090 = rise_time(t, v, 10, 90)
+    for i in range(5, 50000):
+        j = i * 1e-11
+        j_array = np.append(j_array, j)
+        v_new = lowpass_filter(v, j, fsps)
+        rt = rise_time(t, v_new, 10, 90)
+        rt_array = np.append(rt_array, rt)
+        diff_val = rt - 2 * rt1090
+        if diff_val >= 0:
+            break
+
+    tau = j_array[np.argmin(np.abs(rt_array - 2 * rt1090))]
+
+    return tau
+
+
+# Returns time when spe waveform begins and time when spe waveform ends
+def calculate_t1_t2(t, v):
+    idx1 = np.inf
+    idx2 = np.inf
+    idx3 = np.inf
+
+    for i in range(len(v)):
+        if v[i] <= 0.1 * min(v):
+            idx1 = i
+            break
+        else:
+            continue
+
+    for i in range(idx1, len(v)):
+        if v[i] == min(v):
+            idx2 = i
+            break
+        else:
+            continue
+
+    for i in range(len(v), idx2, -1):
+        if v[i] <= 0.1 * min(v):
+            idx3 = i
+            break
+        else:
+            continue
+
+    t1 = t[idx1]                    # Finds time of beginning of spe
+    t2 = t[idx3]                    # Finds time of end of spe
+
+    return t1, t2
+
+
+# Returns the average baseline (baseline noise level)
+def calculate_average(t, v):
+    v_sum = 0
+    t1, t2 = calculate_t1_t2(t, v)
+
+    for i in range(int(.1 * len(t)), int(np.where(t == t1) - (.1 * len(t)))):
+        v_sum += v[i]
+
+    for i in range(int(np.where(t == t2) + (.1 * len(t))), int(.9 * len(t))):
+        v_sum += v[i]
+
+    average = v_sum / ((int(np.where(t == t1) - (.1 * len(t))) - int(.1 * len(t))) +
+                       (int(.9 * len(t)) - int(np.where(t == t2) + (.1 * len(t)))))
+
+    return average
+
+
+# Returns rise times of given percentages of amplitude
+def rise_time(t, v, low, high):
+    percent_low = low / 100
+    percent_high = high / 100
+
+    avg = calculate_average(t, v)               # Calculates average baseline
+    t1, t2 = calculate_t1_t2(t, v)              # Calculates start time of spe
+    min_time = t[np.where(v == min(v))][0]      # Finds time at point of minimum voltage
+
+    val_1 = percent_low * (min(v) - avg)        # Calculates first percent of max
+    val_2 = percent_high * (min(v) - avg)       # Calculates second percent of max
+
+    tvals = np.linspace(t1, min_time, 5000) # Creates array of times from beginning of spe to point of minimum voltage
+    vvals = np.interp(tvals, t, v)  # Interpolates & creates array of voltages from beginning of spe to minimum voltage
+
+    time_low = tvals[np.argmin(np.abs(vvals - val_1))]          # Finds time of point of first percent of max
+    time_high = tvals[np.argmin(np.abs(vvals - val_2))]         # Finds time of point of second percent of max
+
+    risetime = time_high - time_low                             # Calculates rise time
+    risetime = float(format(risetime, '.2e'))
+
+    return risetime
