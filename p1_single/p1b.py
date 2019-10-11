@@ -6,6 +6,7 @@ def p1b(start, end, dest_path, nhdr):
     charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array, \
         time10_array, time20_array, time80_array, time90_array, jitter_array, p1b_spe_array = initialize_arrays_2()
     file_path_calc, file_path_shift, file_path_shift_d1b, file_path_not_spe = initialize_folders_2(dest_path)
+    make_folders_2(file_path_shift_d1b, file_path_not_spe)
 
     # Mean p1 values
     mean_fwhm, mean_charge, mean_fall1090, mean_amplitude = mean_values(7.57e-9, 1.43e-12, 1.68e-8, 0.00661)
@@ -61,6 +62,9 @@ def p1b(start, end, dest_path, nhdr):
     # & 90% jitter
     p1_hist(charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array,
             time10_array, time20_array, time80_array, time90_array, dest_path, 100, 'd1b')
+
+    # Plots and saves average waveform
+    average_waveform(start, end, dest_path, file_path_shift_d1b, 'd1b', nhdr)
 
 
 if __name__ == '__main__':

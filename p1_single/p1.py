@@ -4,16 +4,17 @@ from p1_functions import *
 def p1(start, end, date, date_time, filter_band, nhdr, fsps, fc, numtaps, baseline, r, pmt_hv, gain, offset, trig_delay,
        amp, band, nfilter):
     gen_path, save_sort, data_sort, dest_path, data_shift, save_shift = initialize_folders(date, filter_band)
+    make_folders(dest_path, data_shift, save_shift)
 
     # Separates spes and non-spes into different folders
     print('Sorting files...')
-    for i in range(start, end + 1):
-        p1_sort(i, nhdr, fsps, fc, numtaps, data_sort, save_sort, baseline)
+    # for i in range(start, end + 1):
+       # p1_sort(i, nhdr, fsps, fc, numtaps, data_sort, save_sort, baseline)
 
     # Shifts spes so that when t = 0, v = 50% max and baseline = 0
     print('Shifting waveforms...')
     for i in range(start, end + 1):
-        if os.path.isfile((data_shift / 'D1--waveforms--%05d.txt') % i):
+        if os.path.isfile(Path(str((data_shift / 'D1--waveforms--%05d.txt')) % i)):
             shift_waveform(i, nhdr, data_shift, save_shift)
 
     # Creates arrays of beginning & end times of spe waveform, time of end of spe, charge, amplitude, fwhm, 10-90 &
@@ -27,6 +28,9 @@ def p1(start, end, date, date_time, filter_band, nhdr, fsps, fc, numtaps, baseli
     # & 90% jitter
     p1_hist(charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array,
             time10_array, time20_array, time80_array, time90_array, dest_path, 100, 'd1')
+
+    # Plots and saves average waveform
+    average_waveform(start, end, dest_path, save_shift, 'd1', nhdr)
 
     # Creates d1 info file
     info_file(date_time, data_sort, dest_path, pmt_hv, gain, offset, trig_delay, amp, fsps, band, nfilter, r)

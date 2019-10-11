@@ -252,7 +252,7 @@ def shift_waveform(file_num, nhdr, data_path, save_path):
             t, v, hdr = rw(data_path / file_name, nhdr)     # Reads waveform file
             half_max = min(v) / 2                           # Calculates 50% max
             differential = np.diff(v)                       # Calculates derivative of every point in voltage array
-            difference_value = np.abs(v - half_max) # Finds difference between every point in voltage array & 50% max
+            difference_value = np.abs(v - half_max)    # Finds difference between every point in voltage array & 50% max
             for i in range(0, len(differential)):       # Sets every value in difference_value array with a positive
                 if differential[i] > 0:                 # derivative equal to infinity
                     difference_value[i] = np.inf
@@ -288,7 +288,7 @@ def calculate_t1_t2(t, v):
         else:
             continue
 
-    for i in range(len(v), idx2, -1):
+    for i in range(len(v) - 1, idx2, -1):
         if v[i] <= 0.1 * min(v):
             idx3 = i
             break
@@ -306,21 +306,14 @@ def calculate_average(t, v):
     v_sum = 0
     t1, t2 = calculate_t1_t2(t, v)
 
-    if t1 == 0:
-        for i in range(int(np.where(t == t2) + (.1 * len(t))), int(.9 * len(t))):
-            v_sum += v[i]
+    for i in range(int(.05 * len(t)), int(np.where(t == t1)[0] - (.1 * len(t)))):
+        v_sum += v[i]
 
-        average = v_sum / (int(.9 * len(t)) - int(np.where(t == t2) + (.1 * len(t))))
+    for i in range(int(np.where(t == t2)[0] + (.1 * len(t))), int(.95 * len(t))):
+        v_sum += v[i]
 
-    else:
-        for i in range(int(.1 * len(t)), int(np.where(t == t1) - (.1 * len(t)))):
-            v_sum += v[i]
-
-        for i in range(int(np.where(t == t2) + (.1 * len(t))), int(.9 * len(t))):
-            v_sum += v[i]
-
-        average = v_sum / ((int(np.where(t == t1) - (.1 * len(t))) - int(.1 * len(t))) +
-                           (int(.9 * len(t)) - int(np.where(t == t2) + (.1 * len(t)))))
+    average = v_sum / ((int(np.where(t == t1)[0] - (.1 * len(t))) - int(.05 * len(t))) +
+                       (int(.95 * len(t)) - int(np.where(t == t2)[0] + (.1 * len(t)))))
 
     return average
 
@@ -681,17 +674,18 @@ def p1_hist(charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_
 
 
 # Calculates average waveform of spe
-def average_waveform(start, end, dest_path, nhdr):
-    data_file = Path(dest_path / 'd1_shifted')
+def average_waveform(start, end, dest_path, data_file, version, nhdr):
     save_file = Path(dest_path / 'plots')
     tsum = 0
     vsum = 0
     n = 0
+
     for i in range(start, end + 1):
         file_name = 'D1--waveforms--%05d.txt' % i
         if os.path.isfile(data_file / file_name):
             print('Reading file #', i)
             t, v, hdr = rw(data_file / file_name, nhdr)     # Reads a waveform file
+            array_length = len(t)
             v = v / min(v)                                  # Normalizes voltages
             idx = np.where(t == 0)                          # Finds index of t = 0 point
             idx = int(idx[0])
@@ -702,17 +696,17 @@ def average_waveform(start, end, dest_path, nhdr):
             idx3 = np.where(t == max(t))                    # Finds index of point of maximum t
             idx3 = int(idx3[0])
             # Only averages waveform files that have enough points before t = 0 & after the spe
-            if idx2 <= 3430:
+            if idx2 <= int(0.87 * array_length):
                 # Removes points between point of maximum t & chosen minimum t in time & voltage arrays
-                t = np.concatenate((t[:idx3], t[3430:]))
-                v = np.concatenate((v[:idx3], v[3430:]))
+                t = np.concatenate((t[:idx3], t[int(0.87 * array_length):]))
+                v = np.concatenate((v[:idx3], v[int(0.87 * array_length):]))
                 # Rolls time & voltage arrays so that point of chosen minimum t is at index 0
                 t = np.roll(t, -idx3)
                 v = np.roll(v, -idx3)
-                if len(t) >= 3920:
+                if len(t) >= int(0.99 * array_length):
                     # Removes points after chosen point of maximum t in time & voltage arrays
-                    t = t[:3920]
-                    v = v[:3920]
+                    t = t[:int(0.99 * array_length)]
+                    v = v[:int(0.99 * array_length)]
                     # Sums time & voltage arrays
                     tsum += t
                     vsum += v
@@ -726,10 +720,10 @@ def average_waveform(start, end, dest_path, nhdr):
     plt.xlabel('Time (s)')
     plt.ylabel('Normalized Voltage')
     plt.title('Average Waveform')
-    plt.savefig(save_file / 'avg_waveform.png', dpi=360)
+    plt.savefig(save_file / 'avg_waveform_' + version + '.png', dpi=360)
 
     # Saves average waveform data
-    file_name = dest_path / 'hist_data' / 'avg_waveform.txt'
+    file_name = dest_path / 'hist_data' / 'avg_waveform_' + version + '.txt'
     hdr = 'Average Waveform\n\n\n\nTime,Ampl'
     ww(t_avg, v_avg, file_name, hdr)
 
@@ -758,6 +752,30 @@ def initialize_folders(date, filter_band):
     save_shift = Path(dest_path / 'd1_shifted')
 
     return gen_path, save_sort, data_sort, dest_path, data_shift, save_shift
+
+
+def make_folders(dest_path, data_shift, save_shift):
+    if not os.path.exists(data_shift):
+        print('Creating raw spe folder')
+        os.mkdir(data_shift)
+    if not os.path.exists(Path(dest_path / 'not_spe')):
+        print('Creating not spe folder')
+        os.mkdir(Path(dest_path / 'not_spe'))
+    if not os.path.exists(Path(dest_path / 'unsure_if_spe')):
+        print('Creating unsure if spe folder')
+        os.mkdir(Path(dest_path / 'unsure_if_spe'))
+    if not os.path.exists(save_shift):
+        print('Creating shifted spe folder')
+        os.mkdir(save_shift)
+    if not os.path.exists(Path(dest_path / 'calculations')):
+        print('Creating calculations folder')
+        os.mkdir(Path(dest_path / 'calculations'))
+    if not os.path.exists(Path(dest_path / 'hist_data')):
+        print('Creating histogram data folder')
+        os.mkdir(Path(dest_path / 'hist_data'))
+    if not os.path.exists(Path(dest_path / 'plots')):
+        print('Creating plots folder')
+        os.mkdir(Path(dest_path / 'plots'))
 
 
 # P1B
@@ -791,6 +809,15 @@ def initialize_folders_2(dest_path):
     file_path_not_spe = Path(dest_path / 'd1b_not_spe')
 
     return file_path_calc, file_path_shift, file_path_shift_d1b, file_path_not_spe
+
+
+def make_folders_2(file_path_shift_d1b, file_path_not_spe):
+    if not os.path.exists(file_path_shift_d1b):
+        print('Creating d1b shifted spe folder')
+        os.mkdir(file_path_shift_d1b)
+    if not os.path.exists(file_path_not_spe):
+        print('Creating d1b not spe folder')
+        os.mkdir(file_path_not_spe)
 
 
 # Assigns variables to mean values of FWHM, charge, 10-90 falltime, and amplitude
