@@ -281,24 +281,29 @@ def calculate_t1_t2(t, v):
         else:
             continue
 
-    for i in range(idx1, len(v)):
-        if v[i] == min(v):
-            idx2 = i
-            break
+    if idx1 == np.inf:
+        return 0, -1
+    else:
+        for i in range(idx1, len(v)):
+            if v[i] == min(v):
+                idx2 = i
+                break
+            else:
+                continue
+        if idx2 == np.inf:
+            return 0, -1
         else:
-            continue
+            for i in range(len(v) - 1, idx2, -1):
+                if v[i] <= 0.1 * min(v):
+                    idx3 = i
+                    break
+                else:
+                    continue
 
-    for i in range(len(v) - 1, idx2, -1):
-        if v[i] <= 0.1 * min(v):
-            idx3 = i
-            break
-        else:
-            continue
+            t1 = t[idx1]                    # Finds time of beginning of spe
+            t2 = t[idx3]                    # Finds time of end of spe
 
-    t1 = t[idx1]                    # Finds time of beginning of spe
-    t2 = t[idx3]                    # Finds time of end of spe
-
-    return t1, t2
+            return t1, t2
 
 
 # Returns the average baseline (baseline noise level)
@@ -306,16 +311,20 @@ def calculate_average(t, v):
     v_sum = 0
     t1, t2 = calculate_t1_t2(t, v)
 
-    for i in range(int(.05 * len(t)), int(np.where(t == t1)[0] - (.1 * len(t)))):
-        v_sum += v[i]
+    try:
+        for i in range(int(.05 * len(t)), int(np.where(t == t1)[0] - (.1 * len(t)))):
+            v_sum += v[i]
 
-    for i in range(int(np.where(t == t2)[0] + (.1 * len(t))), int(.95 * len(t))):
-        v_sum += v[i]
+        for i in range(int(np.where(t == t2)[0] + (.1 * len(t))), int(.95 * len(t))):
+            v_sum += v[i]
 
-    average = v_sum / ((int(np.where(t == t1)[0] - (.1 * len(t))) - int(.05 * len(t))) +
-                       (int(.95 * len(t)) - int(np.where(t == t2)[0] + (.1 * len(t)))))
+        average = v_sum / ((int(np.where(t == t1)[0] - (.1 * len(t))) - int(.05 * len(t))) +
+                        (int(.95 * len(t)) - int(np.where(t == t2)[0] + (.1 * len(t)))))
 
-    return average
+        return average
+
+    except:
+        return np.inf
 
 
 # Returns charge of spe (as a positive value)
@@ -348,9 +357,9 @@ def calculate_fwhm(t, v):
     avg = calculate_average(t, v)                       # Calculates average baseline
     half_max = ((min(v) - avg) / 2).item()              # Calculates 50% max value
 
-    tvals1 = np.linspace(t1, t[np.where(v == min(v))], 2500)
+    tvals1 = np.linspace(t1, t[np.where(v == min(v))[0][0]], 2500)
     vvals1 = np.interp(tvals1, t, v)
-    tvals2 = np.linspace(t[np.where(v == min(v))], t2, 2500)
+    tvals2 = np.linspace(t[np.where(v == min(v))[0][0]], t2, 2500)
     vvals2 = np.interp(tvals2, t, v)
 
     for i in range(len(vvals1)):
@@ -360,7 +369,7 @@ def calculate_fwhm(t, v):
         else:
             continue
 
-    for i in range(len(vvals2), 0, -1):
+    for i in range(len(vvals2) - 1, 0, -1):
         if vvals2[i] <= half_max:
             time2 = tvals2[i]
             break
@@ -441,9 +450,9 @@ def calculate_jitter(t, v, per):
 
 
 # Checks if calculated values are possible or not
-def check_if_impossible(t1, t2, charge, amp, fwhm, rise1090, rise2080, fall1090, fall2080, j10, j20, j80, j90):
-    if (t1 < 0 or t2 <= t1 or charge <= 0 or amp <= 0 or fwhm <= 0 or rise1090 <= 0 or rise2080 <= 0 or fall1090 <= 0 or
-            fall2080 <= 0 or j10 >= 0 or j20 >= 0 or j80 <= 0 or j90 <= 0):
+def check_if_impossible(t1, t2, charge, amp, fwhm, rise1090, rise2080, fall1090, fall2080, j10, j20, j80, j90, avg):
+    if (t1 > 0 or t2 <= t1 or charge <= 0 or amp <= 0 or fwhm <= 0 or rise1090 <= 0 or rise2080 <= 0 or fall1090 <= 0 or
+            fall2080 <= 0 or j10 >= 0 or j20 >= 0 or j80 <= 0 or j90 <= 0 or avg == np.inf):
         return 'impossible'
     else:
         return 'ok'
@@ -499,8 +508,6 @@ def remove_spe(path_1, path_2, path_3, number, nhdr):
     ww(t, v, str(path_2 / 'not_spe' / 'D1--not_spe--%05d.txt') % number, hdr)
     if os.path.isfile(str(path_3 / 'D1--waveforms--%05d.txt') % number):
         os.remove(str(path_3 / 'D1--waveforms--%05d.txt') % number)
-    if os.path.isfile(str(path_2 / 'd1_raw' / 'D1--waveforms--%05d.txt') % number):
-        os.remove(str(path_2 / 'd1_raw' / 'D1--waveforms--%05d.txt') % number)
     if os.path.isfile(str(path_2 / 'calculations' / 'D1--waveforms--%05d.txt') % number):
         os.remove(str(path_2 / 'calculations' / 'D1--waveforms--%05d.txt') % number)
 
@@ -529,7 +536,7 @@ def read_calculations(filename):
     t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10, time20, time80, time90 = \
         read_calc(filename)
     possibility = check_if_impossible(t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090,
-                                      fall2080, time10, time20, time80, time90)
+                                      fall2080, time10, time20, time80, time90, 0)
 
     return t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10, time20, time80, time90, \
         possibility
@@ -588,7 +595,7 @@ def make_arrays(save_shift, dest_path, data_sort, start, end, nhdr, r):
                 t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10, time20, time80, time90\
                     = calculations(t, v, r)             # Calculations are done
                 possibility = check_if_impossible(t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090,
-                                                  fall2080, time10, time20, time80, time90)
+                                                  fall2080, time10, time20, time80, time90, amplitude)
 
             t1_array, t2_array, charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, \
                 fall1090_array, fall2080_array, time10_array, time20_array, time80_array, time90_array = \

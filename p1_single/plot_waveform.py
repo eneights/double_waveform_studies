@@ -7,19 +7,15 @@ def plot_waveform(start, end, fil_band, version, folder, nhdr):
         if version == 'd0':
             if os.path.isfile(Path(r'/Volumes/TOSHIBA EXT/data/watchman/20190513_watchman_spe/waveforms/' +
                                    str(fil_band) + r'/d0/C2--waveforms--%05d.txt' % i)):
+                print(i)
                 show_waveform(Path(r'/Volumes/TOSHIBA EXT/data/watchman/20190513_watchman_spe/waveforms/' +
                                    str(fil_band) + r'/d0/C2--waveforms--%05d.txt' % i), version)
-                t, v, hdr = rw(Path(r'/Volumes/TOSHIBA EXT/data/watchman/20190513_watchman_spe/waveforms/' +
-                                    str(fil_band) + r'/d0/C2--waveforms--%05d.txt' % i), nhdr)
-                print(len(t))
         elif version == 'd1':
             if os.path.isfile(Path(r'/Volumes/TOSHIBA EXT/data/watchman/20190513_watchman_spe/waveforms/' +
                                    str(fil_band) + '/d1/' + str(folder) + r'/D1--waveforms--%05d.txt' % i)):
+                print(i)
                 show_waveform(Path(r'/Volumes/TOSHIBA EXT/data/watchman/20190513_watchman_spe/waveforms/' +
                                    str(fil_band) + '/d1/' + str(folder) + r'/D1--waveforms--%05d.txt' % i), version)
-                t, v, hdr = rw(Path(r'/Volumes/TOSHIBA EXT/data/watchman/20190513_watchman_spe/waveforms/' +
-                                    str(fil_band) + '/d1/' + str(folder) + r'/D1--waveforms--%05d.txt' % i), nhdr)
-                print(len(t))
         else:
             print('Invalid version of data (must be d0 or d1)')
 
