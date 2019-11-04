@@ -660,10 +660,13 @@ def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename):
 
     write_hist_data(array, dest_path, filename + '.txt')
 
+    plt.close()
+
 
 # Plots histograms for each calculation array
 def p1_hist(charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array,
             time10_array, time20_array, time80_array, time90_array, dest_path, bins, version):
+    print('Creating histograms')
     plot_histogram(charge_array, dest_path, bins, 'Charge', 'Charge', 'C', 'charge_' + version)
     plot_histogram(amplitude_array, dest_path, bins, 'Voltage', 'Amplitude', 'V', 'amplitude_' + version)
     plot_histogram(fwhm_array, dest_path, bins, 'Time', 'FWHM', 's', 'fwhm_' + version)
@@ -727,10 +730,10 @@ def average_waveform(start, end, dest_path, data_file, version, nhdr):
     plt.xlabel('Time (s)')
     plt.ylabel('Normalized Voltage')
     plt.title('Average Waveform')
-    plt.savefig(save_file / 'avg_waveform_' + version + '.png', dpi=360)
+    plt.savefig(save_file / str('avg_waveform_' + version + '.png'), dpi=360)
 
     # Saves average waveform data
-    file_name = dest_path / 'hist_data' / 'avg_waveform_' + version + '.txt'
+    file_name = dest_path / str(Path('hist_data') / str('avg_waveform_' + version + '.txt'))
     hdr = 'Average Waveform\n\n\n\nTime,Ampl'
     ww(t_avg, v_avg, file_name, hdr)
 
