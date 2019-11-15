@@ -383,6 +383,10 @@ def calculate_fwhm(t, v):
 
 # Returns rise times of given percentages of amplitude
 def rise_time(t, v, low, high):
+    time_low = np.inf
+    time_high = np.inf
+    idx_low = 0
+
     percent_low = low / 100
     percent_high = high / 100
 
@@ -396,8 +400,20 @@ def rise_time(t, v, low, high):
     tvals = np.linspace(t1, min_time, 5000)   # Creates array of times from beginning of spe to point of minimum voltage
     vvals = np.interp(tvals, t, v)  # Interpolates & creates array of voltages from beginning of spe to minimum voltage
 
-    time_low = tvals[np.argmin(np.abs(vvals - val_1))]          # Finds time of point of first percent of max
-    time_high = tvals[np.argmin(np.abs(vvals - val_2))]         # Finds time of point of second percent of max
+    for i in range(len(vvals)):                 # Finds time of point of first percent of max
+        if vvals[i] <= val_1:
+            idx_low = i
+            time_low = tvals[idx_low]
+            break
+        else:
+            continue
+
+    for i in range(idx_low, len(vvals)):        # Finds time of point of second percent of max
+        if vvals[i] <= val_2:
+            time_high = tvals[i]
+            break
+        else:
+            continue
 
     risetime = time_high - time_low                             # Calculates rise time
     risetime = float(format(risetime, '.2e'))
@@ -407,6 +423,10 @@ def rise_time(t, v, low, high):
 
 # Returns fall times of given percentages of amplitude
 def fall_time(t, v, low, high):
+    time_low = np.inf
+    time_high = np.inf
+    idx_high = 0
+
     percent_low = low / 100
     percent_high = high / 100
 
@@ -420,8 +440,20 @@ def fall_time(t, v, low, high):
     tvals = np.linspace(min_time, t2, 5000)  # Creates array of times from beginning of spe to point of minimum voltage
     vvals = np.interp(tvals, t, v)  # Interpolates & creates array of voltages from beginning of spe to minimum voltage
 
-    time_high = tvals[np.argmin(np.abs(vvals - val_1))]     # Finds time of point of first percent of max
-    time_low = tvals[np.argmin(np.abs(vvals - val_2))]      # Finds time of point of second percent of max
+    for i in range(len(vvals)):                 # Finds time of point of first percent of max
+        if vvals[i] >= val_1:
+            idx_high = i
+            time_high = tvals[idx_high]
+            break
+        else:
+            continue
+
+    for i in range(idx_high, len(vvals)):       # Finds time of point of second percent of max
+        if vvals[i] >= val_2:
+            time_low = tvals[i]
+            break
+        else:
+            continue
 
     falltime = time_low - time_high                         # Calculates fall time
     falltime = float(format(falltime, '.2e'))
@@ -431,6 +463,8 @@ def fall_time(t, v, low, high):
 
 # Returns percent jitter of a given percent
 def calculate_jitter(t, v, per):
+    time = np.inf
+
     percent = per / 100
 
     avg = calculate_average(t, v)               # Calculates average baseline
@@ -438,10 +472,15 @@ def calculate_jitter(t, v, per):
     min_time = t[np.where(v == min(v))][0]      # Finds time at point of minimum voltage
 
     val = percent * (min(v) - avg)              # Calculates percent of max
-    tvals = np.linspace(t1, min_time, 5000) # Creates array of times from beginning of spe to point of minimum voltage
+    tvals = np.linspace(t1, min_time, 5000)  # Creates array of times from beginning of spe to point of minimum voltage
     vvals = np.interp(tvals, t, v)  # Interpolates & creates array of voltages from beginning of spe to minimum voltage
 
-    time = tvals[np.argmin(np.abs(vvals - val))]        # Finds time
+    for i in range(len(vvals)):                 # Finds time
+        if vvals[i] <= val:
+            time = tvals[i]
+            break
+        else:
+            continue
 
     return time
 
@@ -452,7 +491,9 @@ def calculate_jitter(t, v, per):
 # Checks if calculated values are possible or not
 def check_if_impossible(t1, t2, charge, amp, fwhm, rise1090, rise2080, fall1090, fall2080, j10, j20, j80, j90, avg):
     if (t1 > 0 or t2 <= t1 or charge <= 0 or amp <= 0 or fwhm <= 0 or rise1090 <= 0 or rise2080 <= 0 or fall1090 <= 0 or
-            fall2080 <= 0 or j10 >= 0 or j20 >= 0 or j80 <= 0 or j90 <= 0 or avg == np.inf):
+            fall2080 <= 0 or j10 >= 0 or j20 >= 0 or j80 <= 0 or j90 <= 0 or avg == np.inf or j10 == np.inf or j20 ==
+            np.inf or j80 == np.inf or j90 == np.inf or rise1090 == np.inf or rise2080 == np.inf or fall1090 == np.inf
+            or fall2080 == np.inf):
         return 'impossible'
     else:
         return 'ok'
@@ -654,11 +695,14 @@ def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename, low, 
     bins_diff = bins[1] - bins[0]
     bins = np.linspace(bins[0] + bins_diff / 2, bins[len(bins) - 1] + bins_diff / 2, len(bins))
 
-    bins_range, popt, pcov = gauss_fit(array, bins, n, low, up)         # Finds Gaussian fit
-    plt.plot(bins_range, func(bins_range, *popt), color='red')          # Plots Gaussian fit (mean +/- 2sigma)
+    # bins_range, popt, pcov = gauss_fit(array, bins, n, low, up)         # Finds Gaussian fit
+    # plt.plot(bins_range, func(bins_range, *popt), color='red')          # Plots Gaussian fit (mean +/- 2sigma)
 
-    mu2 = float(format(popt[1], '.2e'))                 # Calculates mean
-    sigma2 = np.abs(float(format(popt[2], '.2e')))      # Calculates standard deviation
+    # mu2 = float(format(popt[1], '.2e'))                 # Calculates mean
+    # sigma2 = np.abs(float(format(popt[2], '.2e')))      # Calculates standard deviation
+
+    mu2 = np.mean(array)
+    sigma2 = np.std(array)
 
     plt.xlabel(xaxis + ' (' + units + ')')
     plt.title(title + ' of SPE\n mean: ' + str(mu2) + ' ' + units + ', SD: ' + str(sigma2) + ' ' + units)
