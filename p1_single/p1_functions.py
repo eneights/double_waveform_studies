@@ -72,7 +72,7 @@ def save_calculations(dest_path, i, t1, t2, charge, amplitude, fwhm, rise1090, r
 # Creates text file with data from an array
 def write_hist_data(array, dest_path, name):
     array = np.sort(array)
-    file_name = Path(dest_path / 'hist_data' / name)
+    file_name = Path(Path(dest_path) / 'hist_data' / name)
 
     myfile = open(file_name, 'w')
     for item in array:  # Writes an array item on each line of file
@@ -660,15 +660,10 @@ def func(x, a, b, c):
 
 
 # Finds Gaussian fit of array
-def gauss_fit(array, bins, n, low, up):
-    if not (low == np.inf and up == np.inf):
-        b_est, c_est = norm.fit(array)          # Calculates mean & standard deviation based on entire array
-        range_min1 = low
-        range_max1 = up
-    else:
-        b_est, c_est = norm.fit(array)      # Calculates mean & standard deviation based on entire array
-        range_min1 = b_est - c_est          # Calculates lower limit of Gaussian fit (1sigma estimation)
-        range_max1 = b_est + c_est          # Calculates upper limit of Gaussian fit (1sigma estimation)
+def gauss_fit(array, bins, n):
+    b_est, c_est = norm.fit(array)      # Calculates mean & standard deviation based on entire array
+    range_min1 = b_est - c_est          # Calculates lower limit of Gaussian fit (1sigma estimation)
+    range_max1 = b_est + c_est          # Calculates upper limit of Gaussian fit (1sigma estimation)
 
     bins_range1 = np.linspace(range_min1, range_max1, 10000)    # Creates array of bins between upper & lower limits
     n_range1 = np.interp(bins_range1, bins, n)              # Interpolates & creates array of y axis values
@@ -687,22 +682,22 @@ def gauss_fit(array, bins, n, low, up):
 
 
 # Creates histogram given an array
-def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename, low, up):
+def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename):
 
-    path = Path(dest_path / 'plots')
+    path = Path(Path(dest_path) / 'plots')
     n, bins, patches = plt.hist(array, nbins)           # Plots histogram
     bins = np.delete(bins, len(bins) - 1)
     bins_diff = bins[1] - bins[0]
     bins = np.linspace(bins[0] + bins_diff / 2, bins[len(bins) - 1] + bins_diff / 2, len(bins))
 
-    # bins_range, popt, pcov = gauss_fit(array, bins, n, low, up)         # Finds Gaussian fit
-    # plt.plot(bins_range, func(bins_range, *popt), color='red')          # Plots Gaussian fit (mean +/- 2sigma)
+    bins_range, popt, pcov = gauss_fit(array, bins, n)                  # Finds Gaussian fit
+    plt.plot(bins_range, func(bins_range, *popt), color='red')          # Plots Gaussian fit (mean +/- 2sigma)
 
-    # mu2 = float(format(popt[1], '.2e'))                 # Calculates mean
-    # sigma2 = np.abs(float(format(popt[2], '.2e')))      # Calculates standard deviation
+    mu2 = float(format(popt[1], '.2e'))                 # Calculates mean
+    sigma2 = np.abs(float(format(popt[2], '.2e')))      # Calculates standard deviation
 
-    mu2 = np.mean(array)
-    sigma2 = np.std(array)
+    # mu2 = np.mean(array)
+    # sigma2 = np.std(array)
 
     plt.xlabel(xaxis + ' (' + units + ')')
     plt.title(title + ' of SPE\n mean: ' + str(mu2) + ' ' + units + ', SD: ' + str(sigma2) + ' ' + units)
@@ -717,20 +712,17 @@ def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename, low, 
 def p1_hist(charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array,
             time10_array, time20_array, time80_array, time90_array, dest_path, bins, version):
     print('Creating histograms')
-    plot_histogram(charge_array, dest_path, bins, 'Charge', 'Charge', 'C', 'charge_' + version, np.inf, np.inf)
-    plot_histogram(amplitude_array, dest_path, bins, 'Voltage', 'Amplitude', 'V', 'amplitude_' + version, np.inf,
-                   np.inf)
-    plot_histogram(fwhm_array, dest_path, bins, 'Time', 'FWHM', 's', 'fwhm_' + version, np.inf, np.inf)
-    plot_histogram(rise1090_array, dest_path, bins, 'Time', '10-90 Rise Time', 's', 'rise1090_' + version, 0, 0.4)
-    plot_histogram(rise2080_array, dest_path, bins, 'Time', '20-80 Rise Time', 's', 'rise2080_' + version, 0, 0.2)
-    plot_histogram(fall1090_array, dest_path, bins, 'Time', '10-90 Fall Time', 's', 'fall1090_' + version, np.inf,
-                   np.inf)
-    plot_histogram(fall2080_array, dest_path, bins, 'Time', '20-80 Fall Time', 's', 'fall2080_' + version, np.inf,
-                   np.inf)
-    plot_histogram(time10_array, dest_path, bins, 'Time', '10% Jitter', 's', 'time10_' + version, -0.3, 0)
-    plot_histogram(time20_array, dest_path, bins, 'Time', '20% Jitter', 's', 'time20_' + version, -0.2, 0)
-    plot_histogram(time80_array, dest_path, bins, 'Time', '80% Jitter', 's', 'time80_' + version, np.inf, np.inf)
-    plot_histogram(time90_array, dest_path, bins, 'Time', '90% Jitter', 's', 'time90_' + version, np.inf, np.inf)
+    plot_histogram(charge_array, dest_path, bins, 'Charge', 'Charge', 'C', 'charge_' + version)
+    plot_histogram(amplitude_array, dest_path, bins, 'Voltage', 'Amplitude', 'V', 'amplitude_' + version)
+    plot_histogram(fwhm_array, dest_path, bins, 'Time', 'FWHM', 's', 'fwhm_' + version)
+    plot_histogram(rise1090_array, dest_path, bins, 'Time', '10-90 Rise Time', 's', 'rise1090_' + version)
+    plot_histogram(rise2080_array, dest_path, bins, 'Time', '20-80 Rise Time', 's', 'rise2080_' + version)
+    plot_histogram(fall1090_array, dest_path, bins, 'Time', '10-90 Fall Time', 's', 'fall1090_' + version)
+    plot_histogram(fall2080_array, dest_path, bins, 'Time', '20-80 Fall Time', 's', 'fall2080_' + version)
+    plot_histogram(time10_array, dest_path, bins, 'Time', '10% Jitter', 's', 'time10_' + version)
+    plot_histogram(time20_array, dest_path, bins, 'Time', '20% Jitter', 's', 'time20_' + version)
+    plot_histogram(time80_array, dest_path, bins, 'Time', '80% Jitter', 's', 'time80_' + version)
+    plot_histogram(time90_array, dest_path, bins, 'Time', '90% Jitter', 's', 'time90_' + version)
 
 
 # AVERAGE/PLOT WAVEFORM
@@ -738,7 +730,7 @@ def p1_hist(charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_
 
 # Calculates average waveform of spe
 def average_waveform(start, end, dest_path, data_file, version, nhdr):
-    save_file = Path(dest_path / 'plots')
+    save_file = Path(Path(dest_path) / 'plots')
     tsum = 0
     vsum = 0
     n = 0
@@ -786,7 +778,7 @@ def average_waveform(start, end, dest_path, data_file, version, nhdr):
     plt.savefig(save_file / str('avg_waveform_' + version + '.png'), dpi=360)
 
     # Saves average waveform data
-    file_name = dest_path / str(Path('hist_data') / str('avg_waveform_' + version + '.txt'))
+    file_name = Path(dest_path) / str(Path('hist_data') / str('avg_waveform_' + version + '.txt'))
     hdr = 'Average Waveform\n\n\n\nTime,Ampl'
     ww(t_avg, v_avg, file_name, hdr)
 
@@ -866,10 +858,10 @@ def initialize_arrays_2():
 
 # Creates p1b folder names
 def initialize_folders_2(dest_path):
-    file_path_calc = Path(dest_path / 'calculations')
-    file_path_shift = Path(dest_path / 'd1_shifted')
-    file_path_shift_d1b = Path(dest_path / 'd1b_shifted')
-    file_path_not_spe = Path(dest_path / 'd1b_not_spe')
+    file_path_calc = Path(Path(dest_path) / 'calculations')
+    file_path_shift = Path(Path(dest_path) / 'd1_shifted')
+    file_path_shift_d1b = Path(Path(dest_path) / 'd1b_shifted')
+    file_path_not_spe = Path(Path(dest_path) / 'd1b_not_spe')
 
     return file_path_calc, file_path_shift, file_path_shift_d1b, file_path_not_spe
 

@@ -9,7 +9,7 @@ def p1b(start, end, dest_path, nhdr):
     make_folders_2(file_path_shift_d1b, file_path_not_spe)
 
     # Mean p1 values
-    mean_fwhm, mean_charge, mean_fall1090, mean_amplitude = mean_values(7.57e-9, 1.43e-12, 1.68e-8, 0.00661)
+    mean_fwhm, mean_charge, mean_fall1090, mean_amplitude = mean_values(7.51e-9, 1.26e-12, 1.88e-8, 0.00658)
 
     # Checks jitter times
     print('Reading files...')
@@ -27,6 +27,7 @@ def p1b(start, end, dest_path, nhdr):
         if os.path.isfile(str(file_path_not_spe / 'D1--waveforms--%05d.txt') % i):
             pass
         elif os.path.isfile(str(file_path_shift_d1b / 'D1--waveforms--%05d.txt') % i):
+            p1b_spe_array = np.append(p1b_spe_array, i)
             pass
         else:
             if os.path.isfile(str(file_path_shift / 'D1--waveforms--%05d.txt') % i):
