@@ -4,7 +4,8 @@ from p1_functions import *
 def p1b(start, end, dest_path, nhdr):
 
     charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array, \
-        time10_array, time20_array, time80_array, time90_array, jitter_array, p1b_spe_array = initialize_arrays_2()
+        time10_array, time20_array, time80_array, time90_array, jitter_array1, jitter_array2, p1b_spe_array = \
+        initialize_arrays_2()
     file_path_calc, file_path_shift, file_path_shift_d1b, file_path_not_spe = initialize_folders_2(dest_path)
     make_folders_2(file_path_shift_d1b, file_path_not_spe)
 
@@ -21,7 +22,9 @@ def p1b(start, end, dest_path, nhdr):
 
             # If jitter times are unreasonable, adds file number to a list
             if possibility == 'no':
-                jitter_array = np.append(jitter_array, int(i))
+                jitter_array1 = np.append(jitter_array1, int(i))
+            elif possibility == 'maybe':
+                jitter_array2 = np.append(jitter_array2, int(i))
 
     for i in range(start, end + 1):
         if os.path.isfile(str(file_path_not_spe / 'D1--waveforms--%05d.txt') % i):
@@ -44,7 +47,7 @@ def p1b(start, end, dest_path, nhdr):
                     print('File #%05d is not spe' % i)
                     ww(t, v, str(file_path_not_spe / 'D1--waveforms--%05d.txt') % i, hdr)
                 else:
-                    p1b_sort(i, nhdr, jitter_array, p1b_spe_array, file_path_shift, file_path_shift_d1b,
+                    p1b_sort(i, nhdr, jitter_array1, jitter_array2, p1b_spe_array, file_path_shift, file_path_shift_d1b,
                              file_path_not_spe)
 
     for i in range(start, end + 1):

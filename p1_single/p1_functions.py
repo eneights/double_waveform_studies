@@ -849,11 +849,12 @@ def initialize_arrays_2():
     time20_array = np.array([])
     time80_array = np.array([])
     time90_array = np.array([])
-    jitter_array = np.array([])
+    jitter_array1 = np.array([])
+    jitter_array2 = np.array([])
     p1b_spe_array = np.array([])
 
     return charge_array, amplitude_array, fwhm_array, rise1090_array, rise2080_array, fall1090_array, fall2080_array, \
-        time10_array, time20_array, time80_array, time90_array, jitter_array, p1b_spe_array
+        time10_array, time20_array, time80_array, time90_array, jitter_array1, jitter_array2, p1b_spe_array
 
 
 # Creates p1b folder names
@@ -898,6 +899,8 @@ def check_jitter(myfile):
 
     if time10 <= -4e-9 or time20 <= -2.5e-9 or time80 >= 2.5e-9 or time90 >= 3.5e-9:
         possibility = 'no'
+    elif time10 <= -2e-9 or time20 <= -1.5e-9 or time80 >= 1.5e-9 or time90 >= 2e-9:
+        possibility = 'maybe'
     else:
         possibility = 'yes'
 
@@ -915,12 +918,20 @@ def check_vals(fwhm, charge, fall, amp, mean_fwhm, mean_charge, mean_fall, mean_
 
 
 # Sorts whether waveform is spe for p1b
-def p1b_sort(i, nhdr, jitter_array, p1b_spe_array, file_path_shift, file_path_shift_d1b, file_path_not_spe):
+def p1b_sort(i, nhdr, jitter_array1, jitter_array2, p1b_spe_array, file_path_shift, file_path_shift_d1b,
+             file_path_not_spe):
     val = 0
-    for j in range(len(jitter_array)):
-        if jitter_array[j] == i:
+    for j in range(len(jitter_array1)):
+        if jitter_array1[j] == i:
             val = 1
-    if val == 1:  # If a file had unreasonable jitter times, plots waveform for user to sort manually
+    for j in range(len(jitter_array2)):
+        if jitter_array2[j] == i:
+            val = 2
+    if val == 1:    # If a file had unreasonable jitter times, plots waveform for user to sort manually
+        print('File #%05d is not spe' % i)
+        t, v, hdr = rw(str(file_path_shift / 'D1--waveforms--%05d.txt') % i, nhdr)
+        ww(t, v, str(file_path_not_spe / 'D1--waveforms--%05d.txt') % i, hdr)
+    elif val == 2:  # If a file had potentially unreasonable jitter times, plots waveform for user to sort manually
         t, v, hdr = rw(str(file_path_shift / 'D1--waveforms--%05d.txt') % i, nhdr)  # Reads waveform
         print('Displaying file #%05d' % i)
         plt.figure()
