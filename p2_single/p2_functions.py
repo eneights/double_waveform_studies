@@ -47,26 +47,31 @@ def ww(x, y, file_name, hdr):
     myfile.close()                          # Closes waveform file
 
 
-# Creates text file with time of beginning of spe, time of end of spe, charge, amplitude, fwhm, 10-90 & 20-80 rise
-# times, 10-90 & 20-80 fall times, and 10%, 20%, 80% & 90% jitter for an spe file
-def save_calculations(dest_path, i, t1, t2, charge, amplitude, fwhm, rise1090, rise2080, fall1090, fall2080, time10,
-                      time20, time80, time90):
-    file_name = str(dest_path / 'calculations' / 'D1--waveforms--%05d.txt') % i
+# Creates text file with rise times at each shaping
+def save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8):
+    file_name = str(dest_path / 'calculations' / 'D2--waveforms--%05d.txt') % i
     myfile = open(file_name, 'w')
-    myfile.write('t1,' + str(t1))
-    myfile.write('\nt2,' + str(t2))
-    myfile.write('\ncharge,' + str(charge))
-    myfile.write('\namplitude,' + str(amplitude))
-    myfile.write('\nfwhm,' + str(fwhm))
-    myfile.write('\nrise1090,' + str(rise1090))
-    myfile.write('\nrise2080,' + str(rise2080))
-    myfile.write('\nfall1090,' + str(fall1090))
-    myfile.write('\nfall2080,' + str(fall2080))
-    myfile.write('\ntime10,' + str(time10))
-    myfile.write('\ntime20,' + str(time20))
-    myfile.write('\ntime80,' + str(time80))
-    myfile.write('\ntime90,' + str(time90))
+    myfile.write('risetime_1,' + str(risetime_1))
+    myfile.write('\nrisetime_2,' + str(risetime_2))
+    myfile.write('\nrisetime_4,' + str(risetime_4))
+    myfile.write('\nrisetime_8,' + str(risetime_8))
     myfile.close()
+
+
+# Reads calculation file
+def read_calc(filename):
+    myfile = open(filename, 'r')  # Opens file with calculations
+    csv_reader = csv.reader(myfile)
+    file_array = np.array([])
+    for row in csv_reader:  # Creates array with calculation data
+        file_array = np.append(file_array, float(row[1]))
+    myfile.close()
+    risetime_1 = file_array[0]
+    risetime_2 = file_array[1]
+    risetime_4 = file_array[2]
+    risetime_8 = file_array[3]
+
+    return risetime_1, risetime_2, risetime_4, risetime_8
 
 
 # Creates text file with data from an array
@@ -86,31 +91,6 @@ def check_if_file(path, file_name):
         return 'yes'
     else:
         return 'no'
-
-
-# Reads calculation file
-def read_calc(filename):
-    myfile = open(filename, 'r')  # Opens file with calculations
-    csv_reader = csv.reader(myfile)
-    file_array = np.array([])
-    for row in csv_reader:  # Creates array with calculation data
-        file_array = np.append(file_array, float(row[1]))
-    myfile.close()
-    t1 = file_array[0]
-    t2 = file_array[1]
-    charge = file_array[2]
-    amp = file_array[3]
-    fwhm = file_array[4]
-    rise1090 = file_array[5]
-    rise2080 = file_array[6]
-    fall1090 = file_array[7]
-    fall2080 = file_array[8]
-    j10 = file_array[9]
-    j20 = file_array[10]
-    j80 = file_array[11]
-    j90 = file_array[12]
-
-    return t1, t2, charge, amp, fwhm, rise1090, rise2080, fall1090, fall2080, j10, j20, j80, j90
 
 
 # Creates info file
@@ -214,7 +194,7 @@ def average_waveform(start, end, dest_path, shaping, nhdr):
     plt.xlabel('Time (s)')
     plt.ylabel('Normalized Voltage')
     plt.title('Average Waveform')
-    plt.savefig(save_file / 'avg_waveform_' + shaping + '.png', dpi=360)
+    plt.savefig(save_file / 'avg_waveform_single_' + shaping + '.png', dpi=360)
 
     # Saves average waveform data
     file_name = dest_path / 'hist_data' / 'avg_waveform_' + shaping + '.txt'
@@ -266,6 +246,24 @@ def calculate_tau(t, v, fsps):
     tau = j_array[np.argmin(np.abs(rt_array - 2 * rt1090))]
 
     return tau
+
+
+# Calculates factors for gain and adds gain to voltage arrays
+def gain(v1, v2, v4, v8):
+    amp1 = min(v1)
+    amp2 = min(v2)
+    amp4 = min(v4)
+    amp8 = min(v8)
+    factor2 = amp1 / amp2
+    factor4 = amp1 / amp4
+    factor8 = amp1 / amp8
+
+    v_gain = v1 * -1
+    v2_gain = v2 * factor2 * -1
+    v4_gain = v4 * factor4 * -1
+    v8_gain = v8 * factor8 * -1
+
+    return v_gain, v2_gain, v4_gain, v8_gain, factor2, factor4, factor8
 
 
 # Returns time when spe waveform begins and time when spe waveform ends
@@ -340,3 +338,232 @@ def rise_time(t, v, low, high):
     risetime = float(format(risetime, '.2e'))
 
     return risetime
+
+
+# Calculates 10-90 rise time for each shaping and returns arrays of 10-90 rise times
+def make_arrays(filt_path1, filt_path2, filt_path4, filt_path8, dest_path, start, end, nhdr):
+    rt_1_array = np.array([])
+    rt_2_array = np.array([])
+    rt_4_array = np.array([])
+    rt_8_array = np.array([])
+
+    for i in range(start, end + 1):
+        file_name1 = str(filt_path1 / 'D2--waveforms--%05d.txt') % i
+        file_name2 = str(filt_path2 / 'D2--waveforms--%05d.txt') % i
+        file_name3 = str(filt_path4 / 'D2--waveforms--%05d.txt') % i
+        file_name4 = str(filt_path8 / 'D2--waveforms--%05d.txt') % i
+        file_name5 = str(dest_path / 'calculations' / 'D1--waveforms--%05d.txt') % i
+
+        # If the calculations were done previously, they are read from a file
+        if os.path.isfile(file_name5):
+            print("Reading calculations from file #%05d" % i)
+            risetime_1, risetime_2, risetime_4, risetime_8 = read_calc(file_name5)
+        # If the calculations were not done yet, they are calculated
+        else:
+            print("Calculating file #%05d" % i)
+            t1, v1, hdr = rw(file_name1, nhdr)          # Unshaped waveform file is read
+            t2, v2, hdr = rw(file_name2, nhdr)          # 2x rise time waveform file is read
+            t4, v4, hdr = rw(file_name3, nhdr)          # 4x rise time waveform file is read
+            t8, v8, hdr = rw(file_name4, nhdr)          # 8x rise time waveform file is read
+            risetime_1 = rise_time(t1, v1, 10, 90)      # Rise time calculation is done
+            risetime_2 = rise_time(t2, v2, 10, 90)      # Rise time calculation is done
+            risetime_4 = rise_time(t4, v4, 10, 90)      # Rise time calculation is done
+            risetime_8 = rise_time(t8, v8, 10, 90)      # Rise time calculation is done
+            save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8)
+
+        rt_1_array = np.append(rt_1_array, risetime_1)
+        rt_2_array = np.append(rt_2_array, risetime_2)
+        rt_4_array = np.append(rt_4_array, risetime_4)
+        rt_8_array = np.append(rt_8_array, risetime_8)
+
+    return rt_1_array, rt_2_array, rt_4_array, rt_8_array
+
+
+# HISTOGRAMS
+
+
+# Defines Gaussian function (a is amplitude, b is mean, c is standard deviation)
+def func(x, a, b, c):
+    gauss = a * np.exp(-(x - b) ** 2.0 / (2 * c ** 2))
+    return gauss
+
+
+# Finds Gaussian fit of array
+def gauss_fit(array, bins, n):
+    b_est, c_est = norm.fit(array)      # Calculates mean & standard deviation based on entire array
+    range_min1 = b_est - c_est          # Calculates lower limit of Gaussian fit (1sigma estimation)
+    range_max1 = b_est + c_est          # Calculates upper limit of Gaussian fit (1sigma estimation)
+
+    bins_range1 = np.linspace(range_min1, range_max1, 10000)    # Creates array of bins between upper & lower limits
+    n_range1 = np.interp(bins_range1, bins, n)              # Interpolates & creates array of y axis values
+    guess1 = [1, float(b_est), float(c_est)]                # Defines guess for values of a, b & c in Gaussian fit
+    popt1, pcov1 = curve_fit(func, bins_range1, n_range1, p0=guess1, maxfev=10000)      # Finds Gaussian fit
+    mu1 = float(format(popt1[1], '.2e'))                        # Calculates mean based on 1sigma guess
+    sigma1 = np.abs(float(format(popt1[2], '.2e')))     # Calculates standard deviation based on 1sigma estimation
+    range_min2 = mu1 - 2 * sigma1                       # Calculates lower limit of Gaussian fit (2sigma)
+    range_max2 = mu1 + 2 * sigma1                       # Calculates upper limit of Gaussian fit (2sigma)
+    bins_range2 = np.linspace(range_min2, range_max2, 10000)    # Creates array of bins between upper & lower limits
+    n_range2 = np.interp(bins_range2, bins, n)          # Interpolates & creates array of y axis values
+    guess2 = [1, mu1, sigma1]                           # Defines guess for values of a, b & c in Gaussian fit
+    popt2, pcov2 = curve_fit(func, bins_range2, n_range2, p0=guess2, maxfev=10000)      # Finds Gaussian fit
+
+    return bins_range2, popt2, pcov2
+
+
+# Creates histogram given an array
+def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename):
+
+    path = Path(Path(dest_path) / 'plots')
+    n, bins, patches = plt.hist(array, nbins)           # Plots histogram
+    bins = np.delete(bins, len(bins) - 1)
+    bins_diff = bins[1] - bins[0]
+    bins = np.linspace(bins[0] + bins_diff / 2, bins[len(bins) - 1] + bins_diff / 2, len(bins))
+
+    bins_range, popt, pcov = gauss_fit(array, bins, n)                  # Finds Gaussian fit
+    plt.plot(bins_range, func(bins_range, *popt), color='red')          # Plots Gaussian fit (mean +/- 2sigma)
+
+    mu2 = float(format(popt[1], '.2e'))                 # Calculates mean
+    sigma2 = np.abs(float(format(popt[2], '.2e')))      # Calculates standard deviation
+
+    plt.xlabel(xaxis + ' (' + units + ')')
+    plt.title(title + ' of SPE\n mean: ' + str(mu2) + ' ' + units + ', SD: ' + str(sigma2) + ' ' + units)
+    plt.savefig(path / str(filename + '.png'), dpi=360)         # Plots histogram with Gaussian fit
+
+    write_hist_data(array, dest_path, filename + '.txt')
+
+    plt.close()
+
+
+# Plots histograms for each calculation array
+def p2_hist(rt_1_array, rt_2_array, rt_4_array, rt_8_array, dest_path, bins):
+    print('Creating histograms')
+    plot_histogram(rt_1_array, dest_path, bins, 'Time', '10-90 Rise Time (No Shaping)', 's', 'rt_1_single')
+    plot_histogram(rt_2_array, dest_path, bins, 'Time', '10-90 Rise Time (2x Shaping)', 's', 'rt_2_single')
+    plot_histogram(rt_4_array, dest_path, bins, 'Time', '10-90 Rise Time (4x Shaping)', 's', 'rt_4_single')
+    plot_histogram(rt_8_array, dest_path, bins, 'Time', '10-90 Rise Time (8x Shaping)', 's', 'rt_8_single')
+
+
+# P2
+
+
+# Creates p1 folder names
+def initialize_folders(date, filter_band):
+    gen_path = Path(r'/Volumes/TOSHIBA EXT/data/watchman')
+    save_path = Path(str(gen_path / '%08d_watchman_spe/waveforms/%s') % (date, filter_band))
+    data_path = Path(save_path / 'd1')
+    initial_data = Path(data_path / 'd1b_shifted')
+    dest_path = Path(save_path / 'd2')
+    raw_data = Path(dest_path / 'd2_single')
+    filt_path1 = Path(dest_path / 'rt_1')
+    filt_path2 = Path(dest_path / 'rt_2')
+    filt_path4 = Path(dest_path / 'rt_4')
+    filt_path8 = Path(dest_path / 'rt_8')
+
+    return gen_path, save_path, data_path, initial_data, dest_path, raw_data, filt_path1, filt_path2, filt_path4, \
+           filt_path8
+
+
+def make_folders(dest_path, raw_data, filt_path1, filt_path2, filt_path4, filt_path8):
+    if not os.path.exists(dest_path):
+        print('Creating d2 folder')
+        os.mkdir(dest_path)
+    if not os.path.exists(raw_data):
+        print('Creating raw spe folder')
+        os.mkdir(raw_data)
+    if not os.path.exists(filt_path1):
+        print('Creating rt 1 folder')
+        os.mkdir(filt_path1)
+    if not os.path.exists(filt_path2):
+        print('Creating rt 2 folder')
+        os.mkdir(filt_path2)
+    if not os.path.exists(filt_path4):
+        print('Creating rt 4 folder')
+        os.mkdir(filt_path4)
+    if not os.path.exists(filt_path8):
+        print('Creating rt 8 folder')
+        os.mkdir(filt_path8)
+    if not os.path.exists(Path(dest_path / 'hist_data')):
+        print('Creating histogram data folder')
+        os.mkdir(Path(dest_path / 'hist_data'))
+    if not os.path.exists(Path(dest_path / 'plots')):
+        print('Creating plots folder')
+        os.mkdir(Path(dest_path / 'plots'))
+    if not os.path.exists(Path(dest_path / 'calculations')):
+        print('Creating calculations folder')
+        os.mkdir(Path(dest_path / 'calculations'))
+    if not os.path.exists(Path(dest_path / 'unusable_data')):
+        print('Creating unusable data folder')
+        os.mkdir(Path(dest_path / 'unusable_data'))
+
+
+# Calculates tau values for 2x, 4x, and 8x the rise time of the average waveform and shapes
+def taus(average_file, fsps, nhdr):
+    t, v1, hdr = rw(average_file, nhdr)
+    v1 = -1 * v1
+    tau_2 = calculate_tau(t, v1, fsps)
+
+    v2 = lowpass_filter(v1, tau_2, fsps)        # Creates new average waveform with 2x rise time shaping
+    tau_4 = calculate_tau(t, v2, fsps)
+
+    v4 = lowpass_filter(v2, tau_4, fsps)        # Creates new average waveform with 4x rise time shaping
+    tau_8 = calculate_tau(t, v4, fsps)
+
+    v8 = lowpass_filter(v4, tau_8, fsps)        # Creates new average waveform with 8x rise time shaping
+
+    return tau_2, tau_4, tau_8, v1, v2, v4, v8
+
+
+# Plots average spe waveforms with 1x, 2x, 4x, and 8x the rise time
+def avg_shapings(average_file, dest_path, v_gain, v2_gain, v4_gain, v8_gain, tau_2, tau_4, tau_8, nhdr):
+    t, v, hdr = rw(average_file, nhdr)
+    plt.plot(t, v_gain)
+    plt.plot(t, v2_gain)
+    plt.plot(t, v4_gain)
+    plt.plot(t, v8_gain)
+    plt.xlabel('Time (s)')
+    plt.ylabel('Normalized Voltage')
+    plt.title('Average Waveforms\norange tau = ' + str(format(tau_2, '.2e')) + ' s, green tau = ' +
+              str(format(tau_4, '.2e')) + ' s, red tau = ' + str(format(tau_8, '.2e')) + ' s')
+    plt.savefig(dest_path / 'plots' / 'avg_waveforms.png', dpi=360)
+    plt.close()
+
+
+# Calculates and saves waveforms with 1x, 2x, 4x, and 8x the rise time
+def shaping(file_name, save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, tau_8, factor2, factor4,
+            factor8, fsps, nhdr):
+    if os.path.isfile(save_name1):
+        print('File #%05d in rt_1 folder' % i)
+    else:
+        t1, v1, hdr = rw(file_name, nhdr)
+        ww(t1, v1, save_name1, hdr)
+        print('File #%05d in rt_1 folder' % i)
+
+    if os.path.isfile(save_name2):
+        print('File #%05d in rt_2 folder' % i)
+    else:
+        t1, v1, hdr = rw(save_name1, nhdr)
+        v2 = lowpass_filter(v1, tau_2, fsps)
+        v2_gain = v2 * factor2
+        t2 = t1
+        ww(t2, v2_gain, save_name2, hdr)
+        print('File #%05d in rt_2 folder' % i)
+
+    if os.path.isfile(save_name4):
+        print('File #%05d in rt_4 folder' % i)
+    else:
+        t2, v2, hdr = rw(save_name2, nhdr)
+        v4 = lowpass_filter(v2, tau_4, fsps)
+        v4_gain = v4 * factor4
+        t4 = t2
+        ww(t4, v4_gain, save_name4, hdr)
+        print('File #%05d in rt_4 folder' % i)
+
+    if os.path.isfile(save_name8):
+        print('File #%05d in rt_8 folder' % i)
+    else:
+        t4, v4, hdr = rw(save_name4, nhdr)
+        v8 = lowpass_filter(v4, tau_8, fsps)
+        v8_gain = v8 * factor8
+        t8 = t4
+        ww(t8, v8_gain, save_name8, hdr)
+        print('File #%05d in rt_8 folder' % i)

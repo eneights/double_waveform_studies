@@ -8,14 +8,14 @@ def p1(start, end, date, date_time, filter_band, nhdr, fsps, fc, numtaps, baseli
 
     # Separates spes and non-spes into different folders
     print('Sorting files...')
-    # for i in range(start, end + 1):
-       # p1_sort(i, nhdr, fsps, fc, numtaps, data_sort, save_sort, baseline)
+    for i in range(start, end + 1):
+        p1_sort(i, nhdr, fsps, fc, numtaps, data_sort, save_sort, baseline)
 
     # Shifts spes so that when t = 0, v = 50% max and baseline = 0
     print('Shifting waveforms...')
-    # for i in range(start, end + 1):
-        # if os.path.isfile(Path(str((data_shift / 'D1--waveforms--%05d.txt')) % i)):
-            # shift_waveform(i, nhdr, data_shift, save_shift)
+    for i in range(start, end + 1):
+        if os.path.isfile(Path(str((data_shift / 'D1--waveforms--%05d.txt')) % i)):
+            shift_waveform(i, nhdr, data_shift, save_shift)
 
     # Creates arrays of beginning & end times of spe waveform, time of end of spe, charge, amplitude, fwhm, 10-90 &
     # 20-80 rise times, 10-90 & 20-80 fall times, and 10%, 20%, 80% & 90% jitter
