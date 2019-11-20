@@ -909,7 +909,8 @@ def check_jitter(myfile):
 
 # Checks if FWHM, charge, amplitude, and 10-90 fall time values are reasonable
 def check_vals(fwhm, charge, fall, amp, mean_fwhm, mean_charge, mean_fall, mean_amp):
-    if charge > 2 * mean_charge and (fwhm > 2 * mean_fwhm or fall > 2 * mean_fall or amp > 2 * mean_amp):
+    if (charge > 2 * mean_charge and (fwhm > 2 * mean_fwhm or fall > 2 * mean_fall or amp > 2 * mean_amp)) or fwhm >= \
+            3e-8:
         possibility = 'no'
     else:
         possibility = 'yes'
