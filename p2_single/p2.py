@@ -57,7 +57,6 @@ def p2(start, end, date, date_time, filter_band, nhdr, fsps, r, pmt_hv, gain, of
                                                                  dest_path, start, end, nhdr)
 
     # Creates histograms of 10-90 rise times for 1x, 2x, 4x, and 8x the initial rise time
-    print('Creating histograms...')
     p2_hist(rt_1_array, rt_2_array, rt_4_array, rt_8_array, dest_path, 100)
 
     # Writes info file

@@ -197,9 +197,11 @@ def average_waveform(start, end, dest_path, shaping, nhdr):
     plt.savefig(save_file / str('avg_waveform_single_' + shaping + '.png'), dpi=360)
 
     # Saves average waveform data
-    file_name = dest_path / 'hist_data' / 'avg_waveform_' + shaping + '.txt'
+    file_name = dest_path / 'hist_data' / str('avg_waveform_' + shaping + '.txt')
     hdr = 'Average Waveform\n\n\n\nTime,Ampl'
     ww(t_avg, v_avg, file_name, hdr)
+
+    plt.close()
 
 
 # Shows a waveform plot to user
@@ -367,23 +369,29 @@ def make_arrays(filt_path1, filt_path2, filt_path4, filt_path8, dest_path, start
         if os.path.isfile(file_name5):
             print("Reading calculations from file #%05d" % i)
             risetime_1, risetime_2, risetime_4, risetime_8 = read_calc(file_name5)
+
+            rt_1_array = np.append(rt_1_array, risetime_1)
+            rt_2_array = np.append(rt_2_array, risetime_2)
+            rt_4_array = np.append(rt_4_array, risetime_4)
+            rt_8_array = np.append(rt_8_array, risetime_8)
         # If the calculations were not done yet, they are calculated
         else:
-            print("Calculating file #%05d" % i)
-            t1, v1, hdr = rw(file_name1, nhdr)          # Unshaped waveform file is read
-            t2, v2, hdr = rw(file_name2, nhdr)          # 2x rise time waveform file is read
-            t4, v4, hdr = rw(file_name3, nhdr)          # 4x rise time waveform file is read
-            t8, v8, hdr = rw(file_name4, nhdr)          # 8x rise time waveform file is read
-            risetime_1 = rise_time(t1, v1, 10, 90)      # Rise time calculation is done
-            risetime_2 = rise_time(t2, v2, 10, 90)      # Rise time calculation is done
-            risetime_4 = rise_time(t4, v4, 10, 90)      # Rise time calculation is done
-            risetime_8 = rise_time(t8, v8, 10, 90)      # Rise time calculation is done
-            save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8)
+            if os.path.isfile(file_name1):
+                print("Calculating file #%05d" % i)
+                t1, v1, hdr = rw(file_name1, nhdr)          # Unshaped waveform file is read
+                t2, v2, hdr = rw(file_name2, nhdr)          # 2x rise time waveform file is read
+                t4, v4, hdr = rw(file_name3, nhdr)          # 4x rise time waveform file is read
+                t8, v8, hdr = rw(file_name4, nhdr)          # 8x rise time waveform file is read
+                risetime_1 = rise_time(t1, v1, 10, 90)      # Rise time calculation is done
+                risetime_2 = rise_time(t2, v2, 10, 90)      # Rise time calculation is done
+                risetime_4 = rise_time(t4, v4, 10, 90)      # Rise time calculation is done
+                risetime_8 = rise_time(t8, v8, 10, 90)      # Rise time calculation is done
+                save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8)
 
-        rt_1_array = np.append(rt_1_array, risetime_1)
-        rt_2_array = np.append(rt_2_array, risetime_2)
-        rt_4_array = np.append(rt_4_array, risetime_4)
-        rt_8_array = np.append(rt_8_array, risetime_8)
+                rt_1_array = np.append(rt_1_array, risetime_1)
+                rt_2_array = np.append(rt_2_array, risetime_2)
+                rt_4_array = np.append(rt_4_array, risetime_4)
+                rt_8_array = np.append(rt_8_array, risetime_8)
 
     return rt_1_array, rt_2_array, rt_4_array, rt_8_array
 
@@ -445,7 +453,7 @@ def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename):
 
 # Plots histograms for each calculation array
 def p2_hist(rt_1_array, rt_2_array, rt_4_array, rt_8_array, dest_path, bins):
-    print('Creating histograms')
+    print('Creating histograms...')
     plot_histogram(rt_1_array, dest_path, bins, 'Time', '10-90 Rise Time (No Shaping)', 's', 'rt_1_single')
     plot_histogram(rt_2_array, dest_path, bins, 'Time', '10-90 Rise Time (2x Shaping)', 's', 'rt_2_single')
     plot_histogram(rt_4_array, dest_path, bins, 'Time', '10-90 Rise Time (4x Shaping)', 's', 'rt_4_single')
