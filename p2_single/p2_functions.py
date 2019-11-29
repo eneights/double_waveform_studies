@@ -194,7 +194,7 @@ def average_waveform(start, end, dest_path, shaping, nhdr):
     plt.xlabel('Time (s)')
     plt.ylabel('Normalized Voltage')
     plt.title('Average Waveform')
-    plt.savefig(save_file / 'avg_waveform_single_' + shaping + '.png', dpi=360)
+    plt.savefig(save_file / str('avg_waveform_single_' + shaping + '.png'), dpi=360)
 
     # Saves average waveform data
     file_name = dest_path / 'hist_data' / 'avg_waveform_' + shaping + '.txt'
@@ -249,7 +249,7 @@ def calculate_tau(t, v, fsps):
 
 
 # Calculates factors for gain and adds gain to voltage arrays
-def gain(v1, v2, v4, v8):
+def calc_gain(v1, v2, v4, v8):
     amp1 = min(v1)
     amp2 = min(v2)
     amp4 = min(v4)
@@ -272,31 +272,36 @@ def calculate_t1_t2(t, v):
     idx2 = np.inf
     idx3 = np.inf
 
-    for i in range(len(v)):
+    for i in range(len(v) - 1):
         if v[i] <= 0.1 * min(v):
             idx1 = i
             break
         else:
             continue
 
-    for i in range(idx1, len(v)):
-        if v[i] == min(v):
-            idx2 = i
-            break
+    if idx1 == np.inf:
+        return 0, -1
+    else:
+        for i in range(idx1, len(v) - 1):
+            if v[i] == min(v):
+                idx2 = i
+                break
+            else:
+                continue
+        if idx2 == np.inf:
+            return 0, -1
         else:
-            continue
+            for i in range(len(v) - 1, idx2, -1):
+                if v[i] <= 0.1 * min(v):
+                    idx3 = i
+                    break
+                else:
+                    continue
 
-    for i in range(len(v), idx2, -1):
-        if v[i] <= 0.1 * min(v):
-            idx3 = i
-            break
-        else:
-            continue
+            t1 = t[idx1]                    # Finds time of beginning of spe
+            t2 = t[idx3]                    # Finds time of end of spe
 
-    t1 = t[idx1]                    # Finds time of beginning of spe
-    t2 = t[idx3]                    # Finds time of end of spe
-
-    return t1, t2
+            return t1, t2
 
 
 # Returns the average baseline (baseline noise level)
@@ -304,16 +309,20 @@ def calculate_average(t, v):
     v_sum = 0
     t1, t2 = calculate_t1_t2(t, v)
 
-    for i in range(int(.1 * len(t)), int(np.where(t == t1) - (.1 * len(t)))):
-        v_sum += v[i]
+    try:
+        for i in range(int(.05 * len(t)), int(np.where(t == t1)[0] - (.1 * len(t)))):
+            v_sum += v[i]
 
-    for i in range(int(np.where(t == t2) + (.1 * len(t))), int(.9 * len(t))):
-        v_sum += v[i]
+        for i in range(int(np.where(t == t2)[0] + (.1 * len(t))), int(.95 * len(t))):
+            v_sum += v[i]
 
-    average = v_sum / ((int(np.where(t == t1) - (.1 * len(t))) - int(.1 * len(t))) +
-                       (int(.9 * len(t)) - int(np.where(t == t2) + (.1 * len(t)))))
+        average = v_sum / ((int(np.where(t == t1)[0] - (.1 * len(t))) - int(.05 * len(t))) +
+                           (int(.95 * len(t)) - int(np.where(t == t2)[0] + (.1 * len(t)))))
 
-    return average
+        return average
+
+    except:
+        return np.inf
 
 
 # Returns rise times of given percentages of amplitude
@@ -453,23 +462,19 @@ def initialize_folders(date, filter_band):
     data_path = Path(save_path / 'd1')
     initial_data = Path(data_path / 'd1b_shifted')
     dest_path = Path(save_path / 'd2')
-    raw_data = Path(dest_path / 'd2_single')
     filt_path1 = Path(dest_path / 'rt_1')
     filt_path2 = Path(dest_path / 'rt_2')
     filt_path4 = Path(dest_path / 'rt_4')
     filt_path8 = Path(dest_path / 'rt_8')
 
-    return gen_path, save_path, data_path, initial_data, dest_path, raw_data, filt_path1, filt_path2, filt_path4, \
+    return gen_path, save_path, data_path, initial_data, dest_path, filt_path1, filt_path2, filt_path4, \
            filt_path8
 
 
-def make_folders(dest_path, raw_data, filt_path1, filt_path2, filt_path4, filt_path8):
+def make_folders(dest_path, filt_path1, filt_path2, filt_path4, filt_path8):
     if not os.path.exists(dest_path):
         print('Creating d2 folder')
         os.mkdir(dest_path)
-    if not os.path.exists(raw_data):
-        print('Creating raw spe folder')
-        os.mkdir(raw_data)
     if not os.path.exists(filt_path1):
         print('Creating rt 1 folder')
         os.mkdir(filt_path1)
@@ -498,15 +503,19 @@ def make_folders(dest_path, raw_data, filt_path1, filt_path2, filt_path4, filt_p
 
 # Calculates tau values for 2x, 4x, and 8x the rise time of the average waveform and shapes
 def taus(average_file, fsps, nhdr):
+    tau_2 = 1.271e-08
+    tau_4 = 1.0479999999999999e-08
+    tau_8 = 2.7539999999999997e-08
+
     t, v1, hdr = rw(average_file, nhdr)
     v1 = -1 * v1
-    tau_2 = calculate_tau(t, v1, fsps)
+    # tau_2 = calculate_tau(t, v1, fsps)
 
     v2 = lowpass_filter(v1, tau_2, fsps)        # Creates new average waveform with 2x rise time shaping
-    tau_4 = calculate_tau(t, v2, fsps)
+    # tau_4 = calculate_tau(t, v2, fsps)
 
     v4 = lowpass_filter(v2, tau_4, fsps)        # Creates new average waveform with 4x rise time shaping
-    tau_8 = calculate_tau(t, v4, fsps)
+    # tau_8 = calculate_tau(t, v4, fsps)
 
     v8 = lowpass_filter(v4, tau_8, fsps)        # Creates new average waveform with 8x rise time shaping
 
@@ -529,41 +538,43 @@ def avg_shapings(average_file, dest_path, v_gain, v2_gain, v4_gain, v8_gain, tau
 
 
 # Calculates and saves waveforms with 1x, 2x, 4x, and 8x the rise time
-def shaping(file_name, save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, tau_8, factor2, factor4,
+def shaping(save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, tau_8, factor2, factor4,
             factor8, fsps, nhdr):
-    if os.path.isfile(save_name1):
-        print('File #%05d in rt_1 folder' % i)
-    else:
-        t1, v1, hdr = rw(file_name, nhdr)
-        ww(t1, v1, save_name1, hdr)
-        print('File #%05d in rt_1 folder' % i)
-
     if os.path.isfile(save_name2):
         print('File #%05d in rt_2 folder' % i)
     else:
-        t1, v1, hdr = rw(save_name1, nhdr)
-        v2 = lowpass_filter(v1, tau_2, fsps)
-        v2_gain = v2 * factor2
-        t2 = t1
-        ww(t2, v2_gain, save_name2, hdr)
-        print('File #%05d in rt_2 folder' % i)
+        if os.path.isfile(save_name1):
+            t1, v1, hdr = rw(save_name1, nhdr)
+            v2 = lowpass_filter(v1, tau_2, fsps)
+            v2_gain = v2 * factor2
+            t2 = t1
+            ww(t2, v2_gain, save_name2, hdr)
+            print('File #%05d in rt_2 folder' % i)
+        else:
+            pass
 
     if os.path.isfile(save_name4):
         print('File #%05d in rt_4 folder' % i)
     else:
-        t2, v2, hdr = rw(save_name2, nhdr)
-        v4 = lowpass_filter(v2, tau_4, fsps)
-        v4_gain = v4 * factor4
-        t4 = t2
-        ww(t4, v4_gain, save_name4, hdr)
-        print('File #%05d in rt_4 folder' % i)
+        if os.path.isfile(save_name2):
+            t2, v2, hdr = rw(save_name2, nhdr)
+            v4 = lowpass_filter(v2, tau_4, fsps)
+            v4_gain = v4 * factor4
+            t4 = t2
+            ww(t4, v4_gain, save_name4, hdr)
+            print('File #%05d in rt_4 folder' % i)
+        else:
+            pass
 
     if os.path.isfile(save_name8):
         print('File #%05d in rt_8 folder' % i)
     else:
-        t4, v4, hdr = rw(save_name4, nhdr)
-        v8 = lowpass_filter(v4, tau_8, fsps)
-        v8_gain = v8 * factor8
-        t8 = t4
-        ww(t8, v8_gain, save_name8, hdr)
-        print('File #%05d in rt_8 folder' % i)
+        if os.path.isfile(save_name4):
+            t4, v4, hdr = rw(save_name4, nhdr)
+            v8 = lowpass_filter(v4, tau_8, fsps)
+            v8_gain = v8 * factor8
+            t8 = t4
+            ww(t8, v8_gain, save_name8, hdr)
+            print('File #%05d in rt_8 folder' % i)
+        else:
+            pass

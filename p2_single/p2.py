@@ -3,46 +3,36 @@ from p2_functions import *
 
 # Creates data sets of spe waveforms with 2x, 4x, and 8x the initial rise times
 def p2(start, end, date, date_time, filter_band, nhdr, fsps, r, pmt_hv, gain, offset, trig_delay, amp, band, nfilter):
-    gen_path, save_path, data_path, initial_data, dest_path, raw_data, filt_path1, filt_path2, filt_path4, filt_path8 =\
+    gen_path, save_path, data_path, initial_data, dest_path, filt_path1, filt_path2, filt_path4, filt_path8 =\
         initialize_folders(date, filter_band)
-    make_folders(dest_path, raw_data, filt_path1, filt_path2, filt_path4, filt_path8)
+    make_folders(dest_path, filt_path1, filt_path2, filt_path4, filt_path8)
 
-    print('Transferring files...')
+    print('Transferring files to rt_1 folder...')
     for i in range(start, end + 1):
         if os.path.isfile(Path(str((initial_data / 'D1--waveforms--%05d.txt')) % i)):
-            t, v, hdr = rw(Path(str((initial_data / 'D1--waveforms--%05d.txt')) % i), nhdr)
-            ww(t, v, str(raw_data / 'D2--waveforms--%05d.txt') % i, hdr)
+            if os.path.isfile(str(filt_path1 / 'D2--waveforms--%05d.txt') % i):
+                pass
+            else:
+                t, v, hdr = rw(Path(str((initial_data / 'D1--waveforms--%05d.txt')) % i), nhdr)
+                ww(t, v, str(filt_path1 / 'D2--waveforms--%05d.txt') % i, hdr)
 
     print('Calculating taus...')
     # Uses average spe waveform to calculate tau to use in lowpass filter for 2x rise time
     average_file = str(data_path / 'hist_data' / 'avg_waveform_d1b.txt')
     tau_2, tau_4, tau_8, v1, v2, v4, v8 = taus(average_file, fsps, nhdr)
 
-    print(tau_2)
-    print(tau_4)
-    print(tau_8)
-
-    v_gain, v2_gain, v4_gain, v8_gain, factor2, factor4, factor8 = gain(v1, v2, v4, v8)
-
-    # tau_2 = 1.3279999999999999e-08
-    # tau_4 = 1.035e-08
-    # tau_8 = 3.3249999999999997e-08
-
-    # factor2 = 2.701641993196675
-    # factor4 = 3.6693337890689417
-    # factor8 = 6.6403385193174485
+    v_gain, v2_gain, v4_gain, v8_gain, factor2, factor4, factor8 = calc_gain(v1, v2, v4, v8)
 
     avg_shapings(average_file, dest_path, v_gain, v2_gain, v4_gain, v8_gain, tau_2, tau_4, tau_8, nhdr)
 
     # For each spe waveform file, calculates and saves waveforms with 1x, 2x, 4x, and 8x the rise time
     for i in range(start, end + 1):
-        file_name = str(raw_data / 'D2--waveforms--%05d.txt') % i
         save_name1 = str(filt_path1 / 'D2--waveforms--%05d.txt') % i
         save_name2 = str(filt_path2 / 'D2--waveforms--%05d.txt') % i
         save_name4 = str(filt_path4 / 'D2--waveforms--%05d.txt') % i
         save_name8 = str(filt_path8 / 'D2--waveforms--%05d.txt') % i
 
-        shaping(file_name, save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, tau_8, factor2, factor4,
+        shaping(save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, tau_8, factor2, factor4,
                 factor8, fsps, nhdr)
 
     # Plots average waveform for 1x rise time
@@ -51,15 +41,15 @@ def p2(start, end, date, date_time, filter_band, nhdr, fsps, r, pmt_hv, gain, of
 
     # Plots average waveform for 2x rise time
     print('Calculating rt_2 average waveform...')
-    average_waveform(start, end, dest_path, 'rt_1', nhdr)
+    average_waveform(start, end, dest_path, 'rt_2', nhdr)
 
     # Plots average waveform for 4x rise time
     print('Calculating rt_4 average waveform...')
-    average_waveform(start, end, dest_path, 'rt_1', nhdr)
+    average_waveform(start, end, dest_path, 'rt_4', nhdr)
 
     # Plots average waveform for 8x rise time
     print('Calculating rt_8 average waveform...')
-    average_waveform(start, end, dest_path, 'rt_1', nhdr)
+    average_waveform(start, end, dest_path, 'rt_8', nhdr)
 
     # Calculates 10-90 rise times for each waveform and puts them into arrays
     print('Doing calculations...')
