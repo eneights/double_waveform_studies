@@ -23,6 +23,8 @@ def p2(start, end, date, date_time, filter_band, nhdr, fsps, r, pmt_hv, gain, of
 
     v_gain, v2_gain, v4_gain, v8_gain, factor2, factor4, factor8 = calc_gain(v1, v2, v4, v8)
 
+    print(factor2, factor4, factor8)
+
     avg_shapings(average_file, dest_path, v_gain, v2_gain, v4_gain, v8_gain, tau_2, tau_4, tau_8, nhdr)
 
     # For each spe waveform file, calculates and saves waveforms with 1x, 2x, 4x, and 8x the rise time
@@ -32,24 +34,24 @@ def p2(start, end, date, date_time, filter_band, nhdr, fsps, r, pmt_hv, gain, of
         save_name4 = str(filt_path4 / 'D2--waveforms--%05d.txt') % i
         save_name8 = str(filt_path8 / 'D2--waveforms--%05d.txt') % i
 
-        shaping(save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, tau_8, factor2, factor4,
-                factor8, fsps, nhdr)
+        do_shaping(save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, tau_8, factor2, factor4, factor8,
+                   fsps, nhdr)
 
     # Plots average waveform for 1x rise time
     print('Calculating rt_1 average waveform...')
-    average_waveform(start, end, dest_path, 'rt_1', nhdr)
+    average_waveform(start, end, dest_path, 'rt_1', 'No Shaping', nhdr)
 
     # Plots average waveform for 2x rise time
     print('Calculating rt_2 average waveform...')
-    average_waveform(start, end, dest_path, 'rt_2', nhdr)
+    average_waveform(start, end, dest_path, 'rt_2', '2x Shaping', nhdr)
 
     # Plots average waveform for 4x rise time
     print('Calculating rt_4 average waveform...')
-    average_waveform(start, end, dest_path, 'rt_4', nhdr)
+    average_waveform(start, end, dest_path, 'rt_4', '4x Shaping', nhdr)
 
     # Plots average waveform for 8x rise time
     print('Calculating rt_8 average waveform...')
-    average_waveform(start, end, dest_path, 'rt_8', nhdr)
+    average_waveform(start, end, dest_path, 'rt_8', '8x Shaping', nhdr)
 
     # Calculates 10-90 rise times for each waveform and puts them into arrays
     print('Doing calculations...')

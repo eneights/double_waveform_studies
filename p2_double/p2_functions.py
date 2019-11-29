@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from scipy.optimize import curve_fit
 from scipy.stats import norm
+from scipy import signal
+
 
 # FILE READING/WRITING
 
@@ -48,7 +50,7 @@ def ww(x, y, file_name, hdr):
 
 # Creates text file with rise times at each shaping
 def save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8):
-    file_name = str(dest_path / 'calculations_single' / 'D2--waveforms--%05d.txt') % i
+    file_name = str(dest_path / 'calculations' / 'D2--waveforms--%05d.txt') % i
     myfile = open(file_name, 'w')
     myfile.write('risetime_1,' + str(risetime_1))
     myfile.write('\nrisetime_2,' + str(risetime_2))
@@ -76,7 +78,7 @@ def read_calc(filename):
 # Creates text file with data from an array
 def write_hist_data(array, dest_path, name):
     array = np.sort(array)
-    file_name = Path(dest_path / 'hist_data_single' / name)
+    file_name = Path(dest_path / 'hist_data_double' / name)
 
     myfile = open(file_name, 'w')
     for item in array:  # Writes an array item on each line of file
@@ -146,18 +148,17 @@ def read_info(myfile):
 
 
 # Calculates average waveform of spe
-def average_waveform(start, end, dest_path, shaping, shaping_name, nhdr):
-    data_file = Path(dest_path / str(shaping + '_single'))
+def average_waveform(array, dest_path, shaping, shaping_name, delay_path, delay_name, delay_folder, nhdr):
     save_file = Path(dest_path / 'plots')
     tsum = 0
     vsum = 0
     n = 0
 
-    for i in range(start, end + 1):
-        file_name = 'D2--waveforms--%05d.txt' % i
-        if os.path.isfile(data_file / file_name):
-            print('Reading file #', i)
-            t, v, hdr = rw(data_file / file_name, nhdr)     # Reads a waveform file
+    for item in array:
+        file_name = 'D2--waveforms--%05d.txt' % item
+        if os.path.isfile(delay_path / file_name):
+            print('Reading file #', item)
+            t, v, hdr = rw(delay_path / file_name, nhdr)    # Reads a waveform file
             array_length = len(t)
             v = v / min(v)                                  # Normalizes voltages
             idx = np.where(t == 0)                          # Finds index of t = 0 point
@@ -192,11 +193,11 @@ def average_waveform(start, end, dest_path, shaping, shaping_name, nhdr):
     plt.plot(t_avg, v_avg)
     plt.xlabel('Time (s)')
     plt.ylabel('Normalized Voltage')
-    plt.title('Average Waveform (' + shaping_name + ')')
-    plt.savefig(save_file / str('avg_waveform_single_' + shaping + '.png'), dpi=360)
+    plt.title('Average Waveform (' + delay_name + ', ' + shaping_name + ')')
+    plt.savefig(save_file / str('avg_waveform_double_' + delay_folder + "_" + shaping + '.png'), dpi=360)
 
     # Saves average waveform data
-    file_name = dest_path / 'hist_data_single' / str('avg_waveform_' + shaping + '.txt')
+    file_name = dest_path / 'hist_data_double' / str('avg_waveform_' + delay_folder + "_" + shaping + '.txt')
     hdr = 'Average Waveform\n\n\n\nTime,Ampl'
     ww(t_avg, v_avg, file_name, hdr)
 
@@ -215,56 +216,6 @@ def show_waveform(file_name, version):
 
 
 # CALCULATIONS
-
-# Puts voltage array through a lowpass filter given a tau and sample rate
-def lowpass_filter(v, tau, fsps):
-    v_filtered = np.array([])
-    alpha = 1 - np.exp(-1. / (fsps * tau))
-    for i in range(len(v)):
-        if i == 0:
-            v_filtered = np.append(v_filtered, v[i])
-        else:
-            v_filtered = np.append(v_filtered, v[i] * alpha + (1 - alpha) * v_filtered[i - 1])
-    return v_filtered
-
-
-# Calculates tau value for lowpass filter
-def calculate_tau(t, v, fsps):
-    rt_array = np.array([])
-    j_array = np.array([])
-
-    rt1090 = rise_time(t, v, 10, 90)
-    for i in range(5, 50000):
-        j = i * 1e-11
-        j_array = np.append(j_array, j)
-        v_new = lowpass_filter(v, j, fsps)
-        rt = rise_time(t, v_new, 10, 90)
-        rt_array = np.append(rt_array, rt)
-        diff_val = rt - 2 * rt1090
-        if diff_val >= 0:
-            break
-
-    tau = j_array[np.argmin(np.abs(rt_array - 2 * rt1090))]
-
-    return tau
-
-
-# Calculates factors for gain and adds gain to voltage arrays
-def calc_gain(v1, v2, v4, v8):
-    amp1 = min(v1)
-    amp2 = min(v2)
-    amp4 = min(v4)
-    amp8 = min(v8)
-    factor2 = amp1 / amp2
-    factor4 = amp1 / amp4
-    factor8 = amp1 / amp8
-
-    v_gain = v1 * -1
-    v2_gain = v2 * factor2 * -1
-    v4_gain = v4 * factor4 * -1
-    v8_gain = v8 * factor8 * -1
-
-    return v_gain, v2_gain, v4_gain, v8_gain, factor2, factor4, factor8
 
 
 # Returns time when spe waveform begins and time when spe waveform ends
@@ -350,19 +301,31 @@ def rise_time(t, v, low, high):
     return risetime
 
 
+# Puts voltage array through a lowpass filter given a tau and sample rate
+def lowpass_filter(v, tau, fsps):
+    v_filtered = np.array([])
+    alpha = 1 - np.exp(-1. / (fsps * tau))
+    for i in range(len(v)):
+        if i == 0:
+            v_filtered = np.append(v_filtered, v[i])
+        else:
+            v_filtered = np.append(v_filtered, v[i] * alpha + (1 - alpha) * v_filtered[i - 1])
+    return v_filtered
+
+
 # Calculates 10-90 rise time for each shaping and returns arrays of 10-90 rise times
-def make_arrays(filt_path1, filt_path2, filt_path4, filt_path8, dest_path, start, end, nhdr):
+def make_arrays(array, delay_path1, delay_path2, delay_path4, delay_path8, dest_path, nhdr):
     rt_1_array = np.array([])
     rt_2_array = np.array([])
     rt_4_array = np.array([])
     rt_8_array = np.array([])
 
-    for i in range(start, end + 1):
-        file_name1 = str(filt_path1 / 'D2--waveforms--%05d.txt') % i
-        file_name2 = str(filt_path2 / 'D2--waveforms--%05d.txt') % i
-        file_name3 = str(filt_path4 / 'D2--waveforms--%05d.txt') % i
-        file_name4 = str(filt_path8 / 'D2--waveforms--%05d.txt') % i
-        file_name5 = str(dest_path / 'calculations_single' / 'D2--waveforms--%05d.txt') % i
+    for item in array:
+        file_name1 = str(delay_path1 / 'D2--waveforms--%05d.txt') % item
+        file_name2 = str(delay_path2 / 'D2--waveforms--%05d.txt') % item
+        file_name3 = str(delay_path4 / 'D2--waveforms--%05d.txt') % item
+        file_name4 = str(delay_path8 / 'D2--waveforms--%05d.txt') % item
+        file_name5 = str(dest_path / 'calculations_double' / 'D2--waveforms--%05d.txt') % item
 
         # If the calculations were done previously, they are read from a file
         if os.path.isfile(file_name5):
@@ -376,7 +339,7 @@ def make_arrays(filt_path1, filt_path2, filt_path4, filt_path8, dest_path, start
         # If the calculations were not done yet, they are calculated
         else:
             if os.path.isfile(file_name1):
-                print("Calculating file #%05d" % i)
+                print("Calculating file #%05d" % item)
                 t1, v1, hdr = rw(file_name1, nhdr)          # Unshaped waveform file is read
                 t2, v2, hdr = rw(file_name2, nhdr)          # 2x rise time waveform file is read
                 t4, v4, hdr = rw(file_name3, nhdr)          # 4x rise time waveform file is read
@@ -385,7 +348,7 @@ def make_arrays(filt_path1, filt_path2, filt_path4, filt_path8, dest_path, start
                 risetime_2 = rise_time(t2, v2, 10, 90)      # Rise time calculation is done
                 risetime_4 = rise_time(t4, v4, 10, 90)      # Rise time calculation is done
                 risetime_8 = rise_time(t8, v8, 10, 90)      # Rise time calculation is done
-                save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8)
+                save_calculations(dest_path, item, risetime_1, risetime_2, risetime_4, risetime_8)
 
                 rt_1_array = np.append(rt_1_array, risetime_1)
                 rt_2_array = np.append(rt_2_array, risetime_2)
@@ -451,105 +414,217 @@ def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename):
 
 
 # Plots histograms for each calculation array
-def p2_hist(rt_1_array, rt_2_array, rt_4_array, rt_8_array, dest_path, bins):
+def p2_hist(rt_1_array, rt_2_array, rt_4_array, rt_8_array, dest_path, bins, delay_name, delay_folder):
     print('Creating histograms...')
-    plot_histogram(rt_1_array, dest_path, bins, 'Time', '10-90 Rise Time (No Shaping)', 's', 'rt_1_single')
-    plot_histogram(rt_2_array, dest_path, bins, 'Time', '10-90 Rise Time (2x Shaping)', 's', 'rt_2_single')
-    plot_histogram(rt_4_array, dest_path, bins, 'Time', '10-90 Rise Time (4x Shaping)', 's', 'rt_4_single')
-    plot_histogram(rt_8_array, dest_path, bins, 'Time', '10-90 Rise Time (8x Shaping)', 's', 'rt_8_single')
+    plot_histogram(rt_1_array, dest_path, bins, 'Time', '10-90 Rise Time (' + delay_name + ', No Shaping)', 's',
+                   delay_folder + 'rt_1_double')
+    plot_histogram(rt_2_array, dest_path, bins, 'Time', '10-90 Rise Time (' + delay_name + ', 2x Shaping)', 's',
+                   delay_folder + 'rt_2_double')
+    plot_histogram(rt_4_array, dest_path, bins, 'Time', '10-90 Rise Time (' + delay_name + ', 4x Shaping)', 's',
+                   delay_folder + 'rt_4_double')
+    plot_histogram(rt_8_array, dest_path, bins, 'Time', '10-90 Rise Time (' + delay_name + ', 8x Shaping)', 's',
+                   delay_folder + 'rt_8_double')
 
 
-# P2
+# P2_CREATE_DOUBLE
 
 
-# Creates p2 folder names
-def initialize_folders(date, filter_band):
+# Creates p2 double folder names
+def initialize_folders(date, filter_band, delay_folder):
     gen_path = Path(r'/Volumes/TOSHIBA EXT/data/watchman')
     save_path = Path(str(gen_path / '%08d_watchman_spe/waveforms/%s') % (date, filter_band))
-    data_path = Path(save_path / 'd1')
-    initial_data = Path(data_path / 'd1b_shifted')
     dest_path = Path(save_path / 'd2')
-    filt_path1 = Path(dest_path / 'rt_1_single')
-    filt_path2 = Path(dest_path / 'rt_2_single')
-    filt_path4 = Path(dest_path / 'rt_4_single')
-    filt_path8 = Path(dest_path / 'rt_8_single')
+    single_path = Path(dest_path / 'rt_1_single')
+    filt_path1 = Path(dest_path / 'rt_1_double')
+    filt_path2 = Path(dest_path / 'rt_2_double')
+    filt_path4 = Path(dest_path / 'rt_4_double')
+    filt_path8 = Path(dest_path / 'rt_8_double')
+    delay_path1 = Path(filt_path1 / delay_folder)
+    delay_path2 = Path(filt_path2 / delay_folder)
+    delay_path4 = Path(filt_path4 / delay_folder)
+    delay_path8 = Path(filt_path8 / delay_folder)
+    filt_path1_s = Path(dest_path / 'rt_1_single_2')
+    filt_path2_s = Path(dest_path / 'rt_2_single_2')
+    filt_path4_s = Path(dest_path / 'rt_4_single_2')
+    filt_path8_s = Path(dest_path / 'rt_8_single_2')
 
-    return gen_path, save_path, data_path, initial_data, dest_path, filt_path1, filt_path2, filt_path4, \
-           filt_path8
+    return gen_path, save_path, dest_path, single_path, filt_path1, filt_path2, filt_path4, filt_path8, delay_path1, \
+           delay_path2, delay_path4, delay_path8, filt_path1_s, filt_path2_s, filt_path4_s, filt_path8_s
 
 
-# Creates p2 folders
-def make_folders(dest_path, filt_path1, filt_path2, filt_path4, filt_path8):
+# Creates p2 double folders
+def make_folders(dest_path, filt_path1, filt_path2, filt_path4, filt_path8, delay_path1, delay_path2, delay_path4,
+                 delay_path8, filt_path1_s, filt_path2_s, filt_path4_s, filt_path8_s):
     if not os.path.exists(dest_path):
         print('Creating d2 folder')
         os.mkdir(dest_path)
     if not os.path.exists(filt_path1):
-        print('Creating rt 1 folder')
+        print('Creating rt 1 folder (double)')
         os.mkdir(filt_path1)
     if not os.path.exists(filt_path2):
-        print('Creating rt 2 folder')
+        print('Creating rt 2 folder (double)')
         os.mkdir(filt_path2)
     if not os.path.exists(filt_path4):
-        print('Creating rt 4 folder')
+        print('Creating rt 4 folder (double)')
         os.mkdir(filt_path4)
     if not os.path.exists(filt_path8):
-        print('Creating rt 8 folder')
+        print('Creating rt 8 folder (double)')
         os.mkdir(filt_path8)
-    if not os.path.exists(Path(dest_path / 'hist_data_single')):
+    if not os.path.exists(delay_path1):
+        print('Creating rt 1 delay folder')
+        os.mkdir(delay_path1)
+    if not os.path.exists(delay_path2):
+        print('Creating rt 2 delay folder')
+        os.mkdir(delay_path2)
+    if not os.path.exists(delay_path4):
+        print('Creating rt 4 delay folder')
+        os.mkdir(delay_path4)
+    if not os.path.exists(delay_path8):
+        print('Creating rt 8 delay folder')
+        os.mkdir(delay_path8)
+    if not os.path.exists(filt_path1_s):
+        print('Creating rt 1 folder (single)')
+        os.mkdir(filt_path1_s)
+    if not os.path.exists(filt_path2_s):
+        print('Creating rt 2 folder (single)')
+        os.mkdir(filt_path2_s)
+    if not os.path.exists(filt_path4_s):
+        print('Creating rt 4 folder (single)')
+        os.mkdir(filt_path4_s)
+    if not os.path.exists(filt_path8_s):
+        print('Creating rt 8 folder (single)')
+        os.mkdir(filt_path8_s)
+    if not os.path.exists(Path(dest_path / 'hist_data_double')):
         print('Creating histogram data folder')
-        os.mkdir(Path(dest_path / 'hist_data_single'))
+        os.mkdir(Path(dest_path / 'hist_data_double'))
     if not os.path.exists(Path(dest_path / 'plots')):
         print('Creating plots folder')
         os.mkdir(Path(dest_path / 'plots'))
-    if not os.path.exists(Path(dest_path / 'calculations_single')):
+    if not os.path.exists(Path(dest_path / 'calculations_double')):
         print('Creating calculations folder')
-        os.mkdir(Path(dest_path / 'calculations_single'))
+        os.mkdir(Path(dest_path / 'calculations_double'))
     if not os.path.exists(Path(dest_path / 'unusable_data')):
         print('Creating unusable data folder')
         os.mkdir(Path(dest_path / 'unusable_data'))
 
 
-# Calculates tau values for 2x, 4x, and 8x the rise time of the average waveform and shapes
-def taus(average_file, fsps, nhdr):
-    tau_2 = 1.271e-08
-    tau_4 = 1.0479999999999999e-08
-    tau_8 = 2.7539999999999997e-08
+# Makes arrays of existing single and double spe files
+def initial_arrays(single_path, filt_path1_s, delay_path1):
+    single_file_array = np.array([])
+    single_file_array2 = np.array([])
+    double_file_array = np.array([])
 
-    t, v1, hdr = rw(average_file, nhdr)
-    v1 = -1 * v1
-    # tau_2 = calculate_tau(t, v1, fsps)
+    print('Checking single spe files...')
+    for i in range(99999):                                  # Makes array of all spe file names
+        file_name = 'D2--waveforms--%05d.txt' % i
+        if os.path.isfile(single_path / file_name):
+            single_file_array = np.append(single_file_array, i)
 
-    v2 = lowpass_filter(v1, tau_2, fsps)        # Creates new average waveform with 2x rise time shaping
-    # tau_4 = calculate_tau(t, v2, fsps)
+    print('Checking existing single spe files...')
+    for i in range(99999):                                  # Makes array of all spe file names
+        file_name = 'D2--waveforms--%05d.txt' % i
+        if os.path.isfile(filt_path1_s / file_name):
+            single_file_array2 = np.append(single_file_array2, i)
 
-    v4 = lowpass_filter(v2, tau_4, fsps)        # Creates new average waveform with 4x rise time shaping
-    # tau_8 = calculate_tau(t, v4, fsps)
+    print('Checking existing double spe files...')
+    for filename in os.listdir(delay_path1):                # Checks for existing double spe files
+        print(filename, 'is a file')
+        files_added = filename[15:27]
+        double_file_array = np.append(double_file_array, files_added)
 
-    v8 = lowpass_filter(v4, tau_8, fsps)        # Creates new average waveform with 8x rise time shaping
-
-    return tau_2, tau_4, tau_8, v1, v2, v4, v8
+    return single_file_array, single_file_array2, double_file_array
 
 
-# Plots average spe waveforms with 1x, 2x, 4x, and 8x the rise time
-def avg_shapings(average_file, dest_path, v_gain, v2_gain, v4_gain, v8_gain, tau_2, tau_4, tau_8, nhdr):
-    t, v, hdr = rw(average_file, nhdr)
-    plt.plot(t, v_gain)
-    plt.plot(t, v2_gain)
-    plt.plot(t, v4_gain)
-    plt.plot(t, v8_gain)
-    plt.xlabel('Time (s)')
-    plt.ylabel('Normalized Voltage')
-    plt.title('Average Waveforms\norange tau = ' + str(format(tau_2, '.2e')) + ' s, green tau = ' +
-              str(format(tau_4, '.2e')) + ' s, red tau = ' + str(format(tau_8, '.2e')) + ' s')
-    plt.savefig(dest_path / 'plots' / 'avg_waveforms_single.png', dpi=360)
-    plt.close()
+# Adds two random spe files with a given delay
+def add_spe(single_file_array, double_file_array, delay, delay_path1, nloops, single_path, nhdr):
+    if len(double_file_array) < nloops:
+        file_1 = single_file_array[np.random.randint(len(single_file_array))]
+        file_2 = single_file_array[np.random.randint(len(single_file_array))]
+        file_name_1 = str(single_path / 'D2--waveforms--%05d.txt') % file_1
+        file_name_2 = str(single_path / 'D2--waveforms--%05d.txt') % file_2
+        files_added = '%05d--%05d' % (file_1, file_2)
+
+        t1, v1, hdr1 = rw(file_name_1, nhdr)
+        t2, v2, hdr2 = rw(file_name_2, nhdr)
+        for j in range(len(t1)):
+            t1[j] = float(format(t1[j], '.4e'))
+        for j in range(len(t2)):
+            t2[j] = float(format(t2[j], '.4e'))
+
+        time_int = float(format(t1[1] - t1[0], '.4e'))
+        delay_amt = int(delay / time_int) * time_int
+
+        try:
+            avg = calculate_average(t2, v2)
+            time_1, time_2 = calculate_t1_t2(t2, v2)
+
+            for i in range(np.argmin(np.abs(t2 - time_1))[0]):
+                v2[i] = avg
+
+            for i in range(np.argmin(np.abs(t2 - time_2))[0], len(v2) - 1):
+                v2[i] = avg
+
+            if min(t1) < min(t2):
+                t1 += delay_amt
+            else:
+                t2 += delay_amt
+
+            if min(t1) < min(t2):
+                idx1 = np.where(t1 == min(t2))[0][0]
+                for j in range(idx1):
+                    t1 = np.append(t1, float(format(max(t1) + time_int, '.4e')))
+                    t2 = np.insert(t2, 0, float(format(min(t2) + time_int, '.4e')))
+                    v1 = np.append(v1, 0)
+                    v2 = np.insert(v2, 0, 0)
+            elif min(t1) > min(t2):
+                idx2 = np.where(t2 == min(t1))[0][0]
+                for j in range(idx2):
+                    t1 = np.insert(t1, 0, float(format(min(t1) - time_int, '.4e')))
+                    t2 = np.append(t2, float(format(max(t2) + time_int, '.4e')))
+                    v1 = np.insert(v1, 0, 0)
+                    v2 = np.append(v2, 0)
+            else:
+                pass
+
+            t = t1
+            v = np.add(v1, v2)
+            file_name = 'D2--waveforms--%s.txt' % files_added
+            ww(t, v, delay_path1 / file_name, hdr1)
+            double_file_array = np.append(double_file_array, files_added)
+            print('Added files #%05d & #%05d' % (file_1, file_2))
+
+        except Exception:
+            pass
+
+    return double_file_array
+
+
+# Creates set of single spe files to compare to doubles
+def single_set(single_file_array, single_file_array2, nloops, single_path, filt_path1_s):
+    if len(single_file_array2) < nloops:
+        file = single_file_array[np.random.randint(len(single_file_array))]
+        file_num = '%05d' % file
+
+        if not os.path.isfile(filt_path1_s / str('D2--waveforms--%s.txt') % file_num):
+            single_file_array2 = np.append(single_file_array2, file_num)
+            t, v, hdr = rw(str(single_path / 'D2--waveforms--%s.txt') % file_num, nhdr)
+            ww(t, v, str(filt_path1_s / 'D2--waveforms--%s.txt') % file_num, hdr)
+            print('File #%05d added' % file)
+
+    return single_file_array2
 
 
 # Calculates and saves waveforms with 1x, 2x, 4x, and 8x the rise time
-def do_shaping(save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, tau_8, factor2, factor4,
-            factor8, fsps, nhdr):
+def shaping(save_name1, save_name2, save_name4, save_name8, item, fsps, nhdr):
+    tau_2 = 1.271e-08
+    tau_4 = 1.0479999999999999e-08
+    tau_8 = 2.7539999999999997e-08
+    factor2 = 2.6769456128607705
+    factor4 = 3.720902601689933
+    factor8 = 6.301083740858239
+
     if os.path.isfile(save_name2):
-        print('File #%05d in rt_2 folder' % i)
+        print('File #%05d in rt_2 folder' % item)
     else:
         if os.path.isfile(save_name1):
             t1, v1, hdr = rw(save_name1, nhdr)
@@ -557,12 +632,12 @@ def do_shaping(save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, 
             v2_gain = v2 * factor2
             t2 = t1
             ww(t2, v2_gain, save_name2, hdr)
-            print('File #%05d in rt_2 folder' % i)
+            print('File #%05d in rt_2 folder' % item)
         else:
             pass
 
     if os.path.isfile(save_name4):
-        print('File #%05d in rt_4 folder' % i)
+        print('File #%05d in rt_4 folder' % item)
     else:
         if os.path.isfile(save_name2):
             t2, v2, hdr = rw(save_name2, nhdr)
@@ -570,12 +645,12 @@ def do_shaping(save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, 
             v4_gain = v4 * factor4
             t4 = t2
             ww(t4, v4_gain, save_name4, hdr)
-            print('File #%05d in rt_4 folder' % i)
+            print('File #%05d in rt_4 folder' % item)
         else:
             pass
 
     if os.path.isfile(save_name8):
-        print('File #%05d in rt_8 folder' % i)
+        print('File #%05d in rt_8 folder' % item)
     else:
         if os.path.isfile(save_name4):
             t4, v4, hdr = rw(save_name4, nhdr)
@@ -583,6 +658,43 @@ def do_shaping(save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, 
             v8_gain = v8 * factor8
             t8 = t4
             ww(t8, v8_gain, save_name8, hdr)
-            print('File #%05d in rt_8 folder' % i)
+            print('File #%05d in rt_8 folder' % item)
         else:
             pass
+
+
+def delay_names(delay_folder):
+    if delay_folder == 'no_delay':
+        delay_name = 'no delay'
+    elif delay_folder == '0.5x_rt':
+        delay_name = '1.52 ns delay'
+    elif delay_folder == '1x_rt':
+        delay_name = '3.04 ns delay'
+    elif delay_folder == '1.5x_rt':
+        delay_name = '4.56 ns delay'
+    elif delay_folder == '2x_rt':
+        delay_name = '6.08 ns delay'
+    elif delay_folder == '2.5x_rt':
+        delay_name = '7.6 ns delay'
+    elif delay_folder == '3x_rt':
+        delay_name = '9.12 ns delay'
+    elif delay_folder == '3.5x_rt':
+        delay_name = '10.6 ns delay'
+    elif delay_folder == '4x_rt':
+        delay_name = '12.2 ns delay'
+    elif delay_folder == '4.5x_rt':
+        delay_name = '13.7 ns delay'
+    elif delay_folder == '5x_rt':
+        delay_name = '15.2 ns delay'
+    elif delay_folder == '5.5x_rt':
+        delay_name = '16.7 ns delay'
+    elif delay_folder == '6x_rt':
+        delay_name = '18.2 ns delay'
+    elif delay_folder == '40_ns':
+        delay_name = '40 ns delay'
+    elif delay_folder == '80_ns':
+        delay_name = '80 ns delay'
+    else:
+        delay_name = ''
+
+    return delay_name

@@ -809,6 +809,7 @@ def initialize_folders(date, filter_band):
     return gen_path, save_sort, data_sort, dest_path, data_shift, save_shift
 
 
+# Creates p1 folders
 def make_folders(dest_path, data_shift, save_shift):
     if not os.path.exists(data_shift):
         print('Creating raw spe folder')
@@ -867,6 +868,7 @@ def initialize_folders_2(dest_path):
     return file_path_calc, file_path_shift, file_path_shift_d1b, file_path_not_spe
 
 
+# Creates p1b folders
 def make_folders_2(file_path_shift_d1b, file_path_not_spe):
     if not os.path.exists(file_path_shift_d1b):
         print('Creating d1b shifted spe folder')
