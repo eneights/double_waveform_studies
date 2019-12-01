@@ -558,10 +558,10 @@ def add_spe(single_file_array, double_file_array, delay, delay_path1, nloops, si
             avg = calculate_average(t2, v2)
             time_1, time_2 = calculate_t1_t2(t2, v2)
 
-            for i in range(np.argmin(np.abs(t2 - time_1))[0]):
+            for i in range(int(np.argmin(np.abs(t2 - time_1)))):
                 v2[i] = avg
 
-            for i in range(np.argmin(np.abs(t2 - time_2))[0], len(v2) - 1):
+            for i in range(int(np.argmin(np.abs(t2 - time_2))), len(v2) - 1):
                 v2[i] = avg
 
             if min(t1) < min(t2):
@@ -600,12 +600,12 @@ def add_spe(single_file_array, double_file_array, delay, delay_path1, nloops, si
 
 
 # Creates set of single spe files to compare to doubles
-def single_set(single_file_array, single_file_array2, nloops, single_path, filt_path1_s):
+def single_set(single_file_array, single_file_array2, nloops, single_path, filt_path1_s, nhdr):
     if len(single_file_array2) < nloops:
         file = single_file_array[np.random.randint(len(single_file_array))]
         file_num = '%05d' % file
 
-        if not os.path.isfile(filt_path1_s / str('D2--waveforms--%s.txt') % file_num):
+        if not os.path.isfile(filt_path1_s / str('D2--waveforms--%s.txt' % file_num)):
             single_file_array2 = np.append(single_file_array2, file_num)
             t, v, hdr = rw(str(single_path / 'D2--waveforms--%s.txt') % file_num, nhdr)
             ww(t, v, str(filt_path1_s / 'D2--waveforms--%s.txt') % file_num, hdr)

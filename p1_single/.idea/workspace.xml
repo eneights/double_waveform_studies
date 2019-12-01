@@ -2,10 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b6d0dd9b-32b2-4a53-b209-2297dc882a2e" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/p1_functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/p1_functions.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../p2_single/p2.py" beforeDir="false" afterPath="$PROJECT_DIR$/../p2_single/p2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../p2_single/p2_functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/../p2_single/p2_functions.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../p2_single/plot_waveform.py" beforeDir="false" afterPath="$PROJECT_DIR$/../p2_single/plot_waveform.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../p2_double/p2_create_double.py" beforeDir="false" afterPath="$PROJECT_DIR$/../p2_double/p2_create_double.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../p2_double/p2_functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/../p2_double/p2_functions.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -39,13 +38,13 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="dummy" value="3" />
-          <entry key="py" value="13812" />
+          <entry key="py" value="14075" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="PLAIN_TEXT" value="3" />
-          <entry key="Python" value="13812" />
+          <entry key="Python" value="14075" />
         </counts>
       </usages-collector>
     </session>
@@ -64,8 +63,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../p2_double/p2_create_double.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="139">
-              <caret line="43" column="56" selection-start-line="43" selection-start-column="56" selection-end-line="43" selection-end-column="56" />
+            <state relative-caret-position="145">
+              <caret line="13" column="30" selection-start-line="13" selection-start-column="30" selection-end-line="13" selection-end-column="30" />
             </state>
           </provider>
         </entry>
@@ -73,13 +72,13 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../p2_double/p2_functions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="384">
-              <caret line="418" column="112" selection-start-line="418" selection-start-column="112" selection-end-line="418" selection-end-column="112" />
+            <state relative-caret-position="337">
+              <caret line="567" lean-forward="true" selection-start-line="567" selection-end-line="567" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
-                <marker date="1575059037564" expanded="true" signature="22361:22362" ph="..." />
-                <marker date="1575059037564" expanded="true" signature="26160:26677" ph="..." />
-                <marker date="1575059037564" expanded="true" signature="28298:28299" ph="..." />
+                <marker date="1575242974540" expanded="true" signature="22361:22362" ph="..." />
+                <marker date="1575242974540" expanded="true" signature="26320:26837" ph="..." />
+                <marker date="1575242974540" expanded="true" signature="28458:28459" ph="..." />
               </folding>
             </state>
           </provider>
@@ -295,20 +294,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../p2_single/p2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="527">
-          <caret line="53" column="49" selection-start-line="53" selection-start-column="49" selection-end-line="53" selection-end-column="49" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../p2_double/p2_create_double.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="139">
-          <caret line="43" column="56" selection-start-line="43" selection-start-column="56" selection-end-line="43" selection-end-column="56" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../p2_single/p2_functions.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1685">
@@ -321,15 +306,29 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../p2_single/p2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="527">
+          <caret line="53" column="49" selection-start-line="53" selection-start-column="49" selection-end-line="53" selection-end-column="49" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../p2_double/p2_create_double.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="145">
+          <caret line="13" column="30" selection-start-line="13" selection-start-column="30" selection-end-line="13" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/../p2_double/p2_functions.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="384">
-          <caret line="418" column="112" selection-start-line="418" selection-start-column="112" selection-end-line="418" selection-end-column="112" />
+        <state relative-caret-position="337">
+          <caret line="567" lean-forward="true" selection-start-line="567" selection-end-line="567" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
-            <marker date="1575059037564" expanded="true" signature="22361:22362" ph="..." />
-            <marker date="1575059037564" expanded="true" signature="26160:26677" ph="..." />
-            <marker date="1575059037564" expanded="true" signature="28298:28299" ph="..." />
+            <marker date="1575242974540" expanded="true" signature="22361:22362" ph="..." />
+            <marker date="1575242974540" expanded="true" signature="26320:26837" ph="..." />
+            <marker date="1575242974540" expanded="true" signature="28458:28459" ph="..." />
           </folding>
         </state>
       </provider>
