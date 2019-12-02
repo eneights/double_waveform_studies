@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from scipy.optimize import curve_fit
 from scipy.stats import norm
-from scipy import signal
 
 
 # FILE READING/WRITING
@@ -50,7 +49,7 @@ def ww(x, y, file_name, hdr):
 
 # Creates text file with rise times at each shaping
 def save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8):
-    file_name = str(dest_path / 'calculations' / 'D2--waveforms--%05d.txt') % i
+    file_name = str(dest_path / 'calculations_double' / 'D2--waveforms--%s.txt') % i
     myfile = open(file_name, 'w')
     myfile.write('risetime_1,' + str(risetime_1))
     myfile.write('\nrisetime_2,' + str(risetime_2))
@@ -159,7 +158,6 @@ def average_waveform(array, dest_path, shaping, shaping_name, delay_path, delay_
         if os.path.isfile(delay_path / file_name):
             print('Reading file #', item)
             t, v, hdr = rw(delay_path / file_name, nhdr)    # Reads a waveform file
-            array_length = len(t)
             v = v / min(v)                                  # Normalizes voltages
             idx = np.where(t == 0)                          # Finds index of t = 0 point
             idx = int(idx[0])
@@ -170,17 +168,17 @@ def average_waveform(array, dest_path, shaping, shaping_name, delay_path, delay_
             idx3 = np.where(t == max(t))                    # Finds index of point of maximum t
             idx3 = int(idx3[0])
             # Only averages waveform files that have enough points before t = 0 & after the spe
-            if idx2 <= int(0.87 * array_length):
+            if idx2 <= 3480:
                 # Removes points between point of maximum t & chosen minimum t in time & voltage arrays
-                t = np.concatenate((t[:idx3], t[int(0.87 * array_length):]))
-                v = np.concatenate((v[:idx3], v[int(0.87 * array_length):]))
+                t = np.concatenate((t[:idx3], t[3480:]))
+                v = np.concatenate((v[:idx3], v[3480:]))
                 # Rolls time & voltage arrays so that point of chosen minimum t is at index 0
                 t = np.roll(t, -idx3)
                 v = np.roll(v, -idx3)
-                if len(t) >= int(0.99 * array_length):
+                if len(t) >= 3960:
                     # Removes points after chosen point of maximum t in time & voltage arrays
-                    t = t[:int(0.99 * array_length)]
-                    v = v[:int(0.99 * array_length)]
+                    t = t[:3960]
+                    v = v[:3960]
                     # Sums time & voltage arrays
                     tsum += t
                     vsum += v
@@ -188,6 +186,7 @@ def average_waveform(array, dest_path, shaping, shaping_name, delay_path, delay_
     # Finds average time & voltage arrays
     t_avg = tsum / n
     v_avg = vsum / n
+    v_avg = v_avg / max(v_avg)
 
     # Plots average waveform & saves image
     plt.plot(t_avg, v_avg)
@@ -321,15 +320,15 @@ def make_arrays(array, delay_path1, delay_path2, delay_path4, delay_path8, dest_
     rt_8_array = np.array([])
 
     for item in array:
-        file_name1 = str(delay_path1 / 'D2--waveforms--%05d.txt') % item
-        file_name2 = str(delay_path2 / 'D2--waveforms--%05d.txt') % item
-        file_name3 = str(delay_path4 / 'D2--waveforms--%05d.txt') % item
-        file_name4 = str(delay_path8 / 'D2--waveforms--%05d.txt') % item
-        file_name5 = str(dest_path / 'calculations_double' / 'D2--waveforms--%05d.txt') % item
+        file_name1 = str(delay_path1 / 'D2--waveforms--%s.txt') % item
+        file_name2 = str(delay_path2 / 'D2--waveforms--%s.txt') % item
+        file_name3 = str(delay_path4 / 'D2--waveforms--%s.txt') % item
+        file_name4 = str(delay_path8 / 'D2--waveforms--%s.txt') % item
+        file_name5 = str(dest_path / 'calculations_double' / 'D2--waveforms--%s.txt') % item
 
         # If the calculations were done previously, they are read from a file
         if os.path.isfile(file_name5):
-            print("Reading calculations from file #%05d" % i)
+            print("Reading calculations from file #%s" % item)
             risetime_1, risetime_2, risetime_4, risetime_8 = read_calc(file_name5)
 
             rt_1_array = np.append(rt_1_array, risetime_1)
@@ -339,7 +338,7 @@ def make_arrays(array, delay_path1, delay_path2, delay_path4, delay_path8, dest_
         # If the calculations were not done yet, they are calculated
         else:
             if os.path.isfile(file_name1):
-                print("Calculating file #%05d" % item)
+                print("Calculating file #%s" % item)
                 t1, v1, hdr = rw(file_name1, nhdr)          # Unshaped waveform file is read
                 t2, v2, hdr = rw(file_name2, nhdr)          # 2x rise time waveform file is read
                 t4, v4, hdr = rw(file_name3, nhdr)          # 4x rise time waveform file is read
@@ -417,13 +416,13 @@ def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename):
 def p2_hist(rt_1_array, rt_2_array, rt_4_array, rt_8_array, dest_path, bins, delay_name, delay_folder):
     print('Creating histograms...')
     plot_histogram(rt_1_array, dest_path, bins, 'Time', '10-90 Rise Time (' + delay_name + ', No Shaping)', 's',
-                   delay_folder + 'rt_1_double')
+                   delay_folder + '_rt_1_double')
     plot_histogram(rt_2_array, dest_path, bins, 'Time', '10-90 Rise Time (' + delay_name + ', 2x Shaping)', 's',
-                   delay_folder + 'rt_2_double')
+                   delay_folder + '_rt_2_double')
     plot_histogram(rt_4_array, dest_path, bins, 'Time', '10-90 Rise Time (' + delay_name + ', 4x Shaping)', 's',
-                   delay_folder + 'rt_4_double')
+                   delay_folder + '_rt_4_double')
     plot_histogram(rt_8_array, dest_path, bins, 'Time', '10-90 Rise Time (' + delay_name + ', 8x Shaping)', 's',
-                   delay_folder + 'rt_8_double')
+                   delay_folder + '_rt_8_double')
 
 
 # P2_CREATE_DOUBLE
@@ -555,14 +554,13 @@ def add_spe(single_file_array, double_file_array, delay, delay_path1, nloops, si
         delay_amt = int(delay / time_int) * time_int
 
         try:
-            avg = calculate_average(t2, v2)
             time_1, time_2 = calculate_t1_t2(t2, v2)
 
             for i in range(int(np.argmin(np.abs(t2 - time_1)))):
-                v2[i] = avg
+                v2[i] = 0
 
             for i in range(int(np.argmin(np.abs(t2 - time_2))), len(v2) - 1):
-                v2[i] = avg
+                v2[i] = 0
 
             if min(t1) < min(t2):
                 t1 += delay_amt
@@ -585,6 +583,8 @@ def add_spe(single_file_array, double_file_array, delay, delay_path1, nloops, si
                     v2 = np.append(v2, 0)
             else:
                 pass
+
+            print(t1, t2)
 
             t = t1
             v = np.add(v1, v2)
