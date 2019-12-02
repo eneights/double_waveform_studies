@@ -12,10 +12,12 @@ def create_double_spe(nloops, date, filter_band, nhdr, delay, delay_folder, fsps
     single_file_array, single_file_array2, double_file_array = initial_arrays(single_path, filt_path1_s, delay_path1)
 
     # Creates double spe files
+    print('Adding double files...')
     for i in range(nloops):
         double_file_array = add_spe(single_file_array, double_file_array, delay, delay_path1, nloops, single_path, nhdr)
 
     # Creates single spe files
+    print('Adding single files...')
     for i in range(nloops):
         single_file_array2 = single_set(single_file_array, single_file_array2, nloops, single_path, filt_path1_s, nhdr)
 

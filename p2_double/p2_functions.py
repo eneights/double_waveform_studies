@@ -155,7 +155,7 @@ def average_waveform(array, dest_path, shaping, shaping_name, delay_path, delay_
     n = 0
 
     for item in array:
-        file_name = 'D2--waveforms--%05d.txt' % item
+        file_name = 'D2--waveforms--%s.txt' % item
         if os.path.isfile(delay_path / file_name):
             print('Reading file #', item)
             t, v, hdr = rw(delay_path / file_name, nhdr)    # Reads a waveform file
@@ -624,7 +624,7 @@ def shaping(save_name1, save_name2, save_name4, save_name8, item, fsps, nhdr):
     factor8 = 6.301083740858239
 
     if os.path.isfile(save_name2):
-        print('File #%05d in rt_2 folder' % item)
+        print('File #%s in rt_2 folder' % item)
     else:
         if os.path.isfile(save_name1):
             t1, v1, hdr = rw(save_name1, nhdr)
@@ -632,12 +632,12 @@ def shaping(save_name1, save_name2, save_name4, save_name8, item, fsps, nhdr):
             v2_gain = v2 * factor2
             t2 = t1
             ww(t2, v2_gain, save_name2, hdr)
-            print('File #%05d in rt_2 folder' % item)
+            print('File #%s in rt_2 folder' % item)
         else:
             pass
 
     if os.path.isfile(save_name4):
-        print('File #%05d in rt_4 folder' % item)
+        print('File #%s in rt_4 folder' % item)
     else:
         if os.path.isfile(save_name2):
             t2, v2, hdr = rw(save_name2, nhdr)
@@ -645,12 +645,12 @@ def shaping(save_name1, save_name2, save_name4, save_name8, item, fsps, nhdr):
             v4_gain = v4 * factor4
             t4 = t2
             ww(t4, v4_gain, save_name4, hdr)
-            print('File #%05d in rt_4 folder' % item)
+            print('File #%s in rt_4 folder' % item)
         else:
             pass
 
     if os.path.isfile(save_name8):
-        print('File #%05d in rt_8 folder' % item)
+        print('File #%s in rt_8 folder' % item)
     else:
         if os.path.isfile(save_name4):
             t4, v4, hdr = rw(save_name4, nhdr)
@@ -658,7 +658,7 @@ def shaping(save_name1, save_name2, save_name4, save_name8, item, fsps, nhdr):
             v8_gain = v8 * factor8
             t8 = t4
             ww(t8, v8_gain, save_name8, hdr)
-            print('File #%05d in rt_8 folder' % item)
+            print('File #%s in rt_8 folder' % item)
         else:
             pass
 
