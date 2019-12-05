@@ -7,7 +7,7 @@ def create_double_spe(nloops, date, filter_band, nhdr, delay, delay_folder, fsps
     delay_path2, delay_path4, delay_path8, filt_path1_s, filt_path2_s, filt_path4_s, filt_path8_s = \
         initialize_folders(date, filter_band, delay_folder)
     make_folders(dest_path, filt_path1, filt_path2, filt_path4, filt_path8, delay_path1, delay_path2, delay_path4,
-                 delay_path8, filt_path1_s, filt_path2_s, filt_path4_s, filt_path8_s)
+                 delay_path8, filt_path1_s, filt_path2_s, filt_path4_s, filt_path8_s, delay_folder)
 
     single_file_array, single_file_array2, double_file_array = initial_arrays(single_path, filt_path1_s, delay_path1)
 
@@ -60,7 +60,8 @@ def create_double_spe(nloops, date, filter_band, nhdr, delay, delay_folder, fsps
     # Calculates 10-90 rise times for each double spe waveform and puts them into arrays
     print('Doing calculations...')
     rt_1_array, rt_2_array, rt_4_array, rt_8_array = make_arrays(double_file_array, delay_path1, delay_path2,
-                                                                 delay_path4, delay_path8, dest_path, nhdr)
+                                                                 delay_path4, delay_path8, dest_path, delay_folder,
+                                                                 nhdr)
 
     # Creates histograms of 10-90 rise times for 1x, 2x, 4x, and 8x the initial rise time for double spe waveforms
     p2_hist(rt_1_array, rt_2_array, rt_4_array, rt_8_array, dest_path, 100, delay_name, delay_folder)

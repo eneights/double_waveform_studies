@@ -48,8 +48,8 @@ def ww(x, y, file_name, hdr):
 
 
 # Creates text file with rise times at each shaping
-def save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8):
-    file_name = str(dest_path / 'calculations_double' / 'D2--waveforms--%s.txt') % i
+def save_calculations(dest_path, delay_folder, i, risetime_1, risetime_2, risetime_4, risetime_8):
+    file_name = str(dest_path / 'calculations_double' / delay_folder / 'D2--waveforms--%s.txt') % i
     myfile = open(file_name, 'w')
     myfile.write('risetime_1,' + str(risetime_1))
     myfile.write('\nrisetime_2,' + str(risetime_2))
@@ -313,7 +313,7 @@ def lowpass_filter(v, tau, fsps):
 
 
 # Calculates 10-90 rise time for each shaping and returns arrays of 10-90 rise times
-def make_arrays(array, delay_path1, delay_path2, delay_path4, delay_path8, dest_path, nhdr):
+def make_arrays(array, delay_path1, delay_path2, delay_path4, delay_path8, dest_path, delay_folder, nhdr):
     rt_1_array = np.array([])
     rt_2_array = np.array([])
     rt_4_array = np.array([])
@@ -324,7 +324,7 @@ def make_arrays(array, delay_path1, delay_path2, delay_path4, delay_path8, dest_
         file_name2 = str(delay_path2 / 'D2--waveforms--%s.txt') % item
         file_name3 = str(delay_path4 / 'D2--waveforms--%s.txt') % item
         file_name4 = str(delay_path8 / 'D2--waveforms--%s.txt') % item
-        file_name5 = str(dest_path / 'calculations_double' / 'D2--waveforms--%s.txt') % item
+        file_name5 = str(dest_path / 'calculations_double' / delay_folder / 'D2--waveforms--%s.txt') % item
 
         # If the calculations were done previously, they are read from a file
         if os.path.isfile(file_name5):
@@ -347,7 +347,7 @@ def make_arrays(array, delay_path1, delay_path2, delay_path4, delay_path8, dest_
                 risetime_2 = rise_time(t2, v2, 10, 90)      # Rise time calculation is done
                 risetime_4 = rise_time(t4, v4, 10, 90)      # Rise time calculation is done
                 risetime_8 = rise_time(t8, v8, 10, 90)      # Rise time calculation is done
-                save_calculations(dest_path, item, risetime_1, risetime_2, risetime_4, risetime_8)
+                save_calculations(dest_path, delay_folder, item, risetime_1, risetime_2, risetime_4, risetime_8)
 
                 rt_1_array = np.append(rt_1_array, risetime_1)
                 rt_2_array = np.append(rt_2_array, risetime_2)
@@ -453,7 +453,7 @@ def initialize_folders(date, filter_band, delay_folder):
 
 # Creates p2 double folders
 def make_folders(dest_path, filt_path1, filt_path2, filt_path4, filt_path8, delay_path1, delay_path2, delay_path4,
-                 delay_path8, filt_path1_s, filt_path2_s, filt_path4_s, filt_path8_s):
+                 delay_path8, filt_path1_s, filt_path2_s, filt_path4_s, filt_path8_s, delay_folder):
     if not os.path.exists(dest_path):
         print('Creating d2 folder')
         os.mkdir(dest_path)
@@ -502,6 +502,9 @@ def make_folders(dest_path, filt_path1, filt_path2, filt_path4, filt_path8, dela
     if not os.path.exists(Path(dest_path / 'calculations_double')):
         print('Creating calculations folder')
         os.mkdir(Path(dest_path / 'calculations_double'))
+    if not os.path.exists(Path(dest_path / 'calculations_double' / delay_folder)):
+        print('Creating delay calculations folder')
+        os.mkdir(Path(dest_path / 'calculations_double' / delay_folder))
     if not os.path.exists(Path(dest_path / 'unusable_data')):
         print('Creating unusable data folder')
         os.mkdir(Path(dest_path / 'unusable_data'))
@@ -571,7 +574,7 @@ def add_spe(single_file_array, double_file_array, delay, delay_path1, nloops, si
                 idx1 = np.where(t1 == min(t2))[0][0]
                 for j in range(idx1):
                     t1 = np.append(t1, float(format(max(t1) + time_int, '.4e')))
-                    t2 = np.insert(t2, 0, float(format(min(t2) + time_int, '.4e')))
+                    t2 = np.insert(t2, 0, float(format(min(t2) - time_int, '.4e')))
                     v1 = np.append(v1, 0)
                     v2 = np.insert(v2, 0, 0)
             elif min(t1) > min(t2):
@@ -583,8 +586,6 @@ def add_spe(single_file_array, double_file_array, delay, delay_path1, nloops, si
                     v2 = np.append(v2, 0)
             else:
                 pass
-
-            print(t1, t2)
 
             t = t1
             v = np.add(v1, v2)
