@@ -22,7 +22,7 @@ def create_double_spe(nloops, date, filter_band, nhdr, delay, delay_folder, fsps
         single_file_array2 = single_set(single_file_array, single_file_array2, nloops, single_path, filt_path1_s, nhdr)
 
     # Shapes single and double waveforms
-    for item in single_file_array:
+    for item in single_file_array2:
         save_name1 = str(filt_path1_s / 'D2--waveforms--%s.txt') % item
         save_name2 = str(filt_path2_s / 'D2--waveforms--%s.txt') % item
         save_name4 = str(filt_path4_s / 'D2--waveforms--%s.txt') % item

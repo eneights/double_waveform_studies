@@ -163,26 +163,29 @@ def average_waveform(array, dest_path, shaping, shaping_name, delay_path, delay_
             idx = int(idx[0])
             t = np.roll(t, -idx)                            # Rolls time array so that t = 0 point is at index 0
             v = np.roll(v, -idx)                            # Rolls voltage array so that 50% max point is at index 0
-            idx2 = np.where(t == min(t))                    # Finds index of point of minimum t
-            idx2 = int(idx2[0])
-            idx3 = np.where(t == max(t))                    # Finds index of point of maximum t
-            idx3 = int(idx3[0])
-            # Only averages waveform files that have enough points before t = 0 & after the spe
-            if idx2 <= 3480:
-                # Removes points between point of maximum t & chosen minimum t in time & voltage arrays
-                t = np.concatenate((t[:idx3], t[3480:]))
-                v = np.concatenate((v[:idx3], v[3480:]))
-                # Rolls time & voltage arrays so that point of chosen minimum t is at index 0
-                t = np.roll(t, -idx3)
-                v = np.roll(v, -idx3)
-                if len(t) >= 3960:
-                    # Removes points after chosen point of maximum t in time & voltage arrays
-                    t = t[:3960]
-                    v = v[:3960]
-                    # Sums time & voltage arrays
-                    tsum += t
-                    vsum += v
-                    n += 1
+            idx2 = int(np.where(t == min(t))[0])            # Finds index of point of minimum t
+            idx3 = int(np.where(t == max(t))[0])            # Finds index of point of maximum t
+            try:
+                idx_low = int(np.where(t == -2.5e-8)[0])
+                idx_high = int(np.where(t == 1.5e-7)[0])
+                # Only averages waveform files that have enough points before t = 0 & after the spe
+                if idx2 <= idx_low:
+                    # Removes points between point of maximum t & chosen minimum t in time & voltage arrays
+                    t = np.concatenate((t[:idx3], t[idx_low:]))
+                    v = np.concatenate((v[:idx3], v[idx_low:]))
+                    # Rolls time & voltage arrays so that point of chosen minimum t is at index 0
+                    t = np.roll(t, -idx3)
+                    v = np.roll(v, -idx3)
+                    if len(t) >= idx_high:
+                        # Removes points after chosen point of maximum t in time & voltage arrays
+                        t = t[:idx_high]
+                        v = v[:idx_high]
+                        # Sums time & voltage arrays
+                        tsum += t
+                        vsum += v
+                        n += 1
+            except Exception:
+                pass
     # Finds average time & voltage arrays
     t_avg = tsum / n
     v_avg = vsum / n
@@ -244,6 +247,44 @@ def calculate_t1_t2(t, v):
         else:
             for i in range(len(v) - 1, idx2, -1):
                 if v[i] <= 0.1 * min(v):
+                    idx3 = i
+                    break
+                else:
+                    continue
+
+            t1 = t[idx1]                    # Finds time of beginning of spe
+            t2 = t[idx3]                    # Finds time of end of spe
+
+            return t1, t2
+
+
+# Returns time when spe waveform begins and time when spe waveform ends for use in adding waveforms
+def calculate_t1_t2_add(t, v):
+    idx1 = np.inf
+    idx2 = np.inf
+    idx3 = np.inf
+
+    for i in range(len(v) - 1):
+        if v[i] <= 0.05 * min(v):
+            idx1 = i
+            break
+        else:
+            continue
+
+    if idx1 == np.inf:
+        return 0, -1
+    else:
+        for i in range(idx1, len(v) - 1):
+            if v[i] == min(v):
+                idx2 = i
+                break
+            else:
+                continue
+        if idx2 == np.inf:
+            return 0, -1
+        else:
+            for i in range(idx2, len(v) - 1):
+                if v[i] >= 0.05 * min(v):
                     idx3 = i
                     break
                 else:
@@ -557,7 +598,7 @@ def add_spe(single_file_array, double_file_array, delay, delay_path1, nloops, si
         delay_amt = int(delay / time_int) * time_int
 
         try:
-            time_1, time_2 = calculate_t1_t2(t2, v2)
+            time_1, time_2 = calculate_t1_t2_add(t2, v2)
 
             for i in range(int(np.argmin(np.abs(t2 - time_1)))):
                 v2[i] = 0
