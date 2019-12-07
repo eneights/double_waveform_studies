@@ -159,13 +159,13 @@ def average_waveform(array, dest_path, shaping, shaping_name, delay_path, delay_
             print('Reading file #', item)
             t, v, hdr = rw(delay_path / file_name, nhdr)    # Reads a waveform file
             v = v / min(v)                                  # Normalizes voltages
-            idx = np.where(t == 0)                          # Finds index of t = 0 point
-            idx = int(idx[0])
-            t = np.roll(t, -idx)                            # Rolls time array so that t = 0 point is at index 0
-            v = np.roll(v, -idx)                            # Rolls voltage array so that 50% max point is at index 0
-            idx2 = int(np.where(t == min(t))[0])            # Finds index of point of minimum t
-            idx3 = int(np.where(t == max(t))[0])            # Finds index of point of maximum t
             try:
+                idx = np.where(t == 0)                      # Finds index of t = 0 point
+                idx = int(idx[0])
+                t = np.roll(t, -idx)                        # Rolls time array so that t = 0 point is at index 0
+                v = np.roll(v, -idx)                        # Rolls voltage array so that 50% max point is at index 0
+                idx2 = int(np.where(t == min(t))[0])        # Finds index of point of minimum t
+                idx3 = int(np.where(t == max(t))[0])        # Finds index of point of maximum t
                 idx_low = int(np.where(t == -2.5e-8)[0])
                 idx_high = int(np.where(t == 1.5e-7)[0])
                 # Only averages waveform files that have enough points before t = 0 & after the spe

@@ -28,7 +28,7 @@ def create_double_spe(nloops, date, filter_band, nhdr, delay, delay_folder, fsps
         save_name4 = str(filt_path4_s / 'D2--waveforms--%s.txt') % item
         save_name8 = str(filt_path8_s / 'D2--waveforms--%s.txt') % item
 
-        shaping(save_name1, save_name2, save_name4, save_name8, item, fsps, nhdr)
+        # shaping(save_name1, save_name2, save_name4, save_name8, item, fsps, nhdr)
 
     for item in double_file_array:
         save_name1 = str(delay_path1 / 'D2--waveforms--%s.txt') % item
