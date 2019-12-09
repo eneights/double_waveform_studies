@@ -49,44 +49,6 @@ def ww(x, y, file_name, hdr):
     myfile.close()                          # Closes waveform file
 
 
-# Creates text file with rise times at each shaping
-def save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8):
-    file_name = str(dest_path / 'calculations_single' / 'D2--waveforms--%05d.txt') % i
-    myfile = open(file_name, 'w')
-    myfile.write('risetime_1,' + str(risetime_1))
-    myfile.write('\nrisetime_2,' + str(risetime_2))
-    myfile.write('\nrisetime_4,' + str(risetime_4))
-    myfile.write('\nrisetime_8,' + str(risetime_8))
-    myfile.close()
-
-
-# Reads calculation file
-def read_calc(filename):
-    myfile = open(filename, 'r')  # Opens file with calculations
-    csv_reader = csv.reader(myfile)
-    file_array = np.array([])
-    for row in csv_reader:  # Creates array with calculation data
-        file_array = np.append(file_array, float(row[1]))
-    myfile.close()
-    risetime_1 = file_array[0]
-    risetime_2 = file_array[1]
-    risetime_4 = file_array[2]
-    risetime_8 = file_array[3]
-
-    return risetime_1, risetime_2, risetime_4, risetime_8
-
-
-# Creates text file with data from an array
-def write_hist_data(array, dest_path, name):
-    array = np.sort(array)
-    file_name = Path(dest_path / 'hist_data_single' / name)
-
-    myfile = open(file_name, 'w')
-    for item in array:  # Writes an array item on each line of file
-        myfile.write(str(item) + '\n')
-    myfile.close()
-
-
 # Creates info file
 def info_file(acq_date_time, source_path, dest_path, pmt_hv, gain, offset, trig_delay, amp, fsps, band, nfilter, r):
     now = datetime.datetime.now()
@@ -211,6 +173,7 @@ def show_waveform(file_name, version):
     plt.title(version + ' Waveform')
     plt.show()
 
+
 # P3
 
 
@@ -231,7 +194,7 @@ def initialize_folders(date, filter_band):
 # Creates p3 folders
 def make_folders(dest_path, filt_path1, filt_path2, filt_path4, filt_path8, fsps_new):
     if not os.path.exists(dest_path):
-        print('Creating d2 folder')
+        print('Creating d3 folder')
         os.mkdir(dest_path)
     if not os.path.exists(filt_path1):
         print('Creating rt 1 folder')
@@ -430,4 +393,3 @@ def down_dig(filt_path1, filt_path2, filt_path4, filt_path8, fsps, fsps_new, noi
                     t, v, hdr = rw(file_name8, nhdr)
                     v_dig = digitize(v, noise)
                     ww(t, v_dig, dig_name8, hdr)
-
