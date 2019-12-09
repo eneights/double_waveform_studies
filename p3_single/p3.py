@@ -6,140 +6,20 @@ def p3(start, end, date, date_time, filter_band, nhdr, fsps, r, pmt_hv, gain, of
        fsps_new, noise):
     gen_path, save_path, data_path, dest_path, filt_path1, filt_path2, filt_path4, filt_path8 = \
         initialize_folders(date, filter_band)
-
+    make_folders(dest_path, filt_path1, filt_path2, filt_path4, filt_path8, fsps_new)
 
     # Copies waveforms with 1x, 2x, 4x, and 8x initial rise times to d3 folder
     for i in range(start, end + 1):
-        file_name1 = str(data_path / 'rt_1' / 'D2--waveforms--%05d.txt') % i
-        file_name2 = str(data_path / 'rt_2' / 'D2--waveforms--%05d.txt') % i
-        file_name4 = str(data_path / 'rt_4' / 'D2--waveforms--%05d.txt') % i
-        file_name8 = str(data_path / 'rt_8' / 'D2--waveforms--%05d.txt') % i
-        save_name1 = str(filt_path_1 / 'raw' / 'D3--waveforms--%05d.txt') % i
-        save_name2 = str(filt_path_2 / 'raw' / 'D3--waveforms--%05d.txt') % i
-        save_name4 = str(filt_path_4 / 'raw' / 'D3--waveforms--%05d.txt') % i
-        save_name8 = str(filt_path_8 / 'raw' / 'D3--waveforms--%05d.txt') % i
+        transfer_files(data_path, filt_path1, filt_path2, filt_path4, filt_path8, i, nhdr)
 
-        if os.path.isfile(file_name1):
-            if os.path.isfile(save_name1):
-                t, v, hdr = rw(file_name1, nhdr)
-                ww(t, v, save_name1, hdr)
-                print('File #%05d in rt_1 folder' % i)
-            else:
-                t, v, hdr = rw(file_name1, nhdr)
-                ww(t, v, save_name1, hdr)
-                print('File #%05d in rt_1 folder' % i)
+    # Downsamples and digitizes waveforms
+    down_dig(filt_path1, filt_path2, filt_path4, filt_path8, fsps, fsps_new, noise, start, end, nhdr)
 
-        if os.path.isfile(file_name2):
-            if os.path.isfile(save_name2):
-                t, v, hdr = rw(file_name2, nhdr)
-                ww(t, v, save_name2, hdr)
-                print('File #%05d in rt_2 folder' % i)
-            else:
-                t, v, hdr = rw(file_name2, nhdr)
-                ww(t, v, save_name2, hdr)
-                print('File #%05d in rt_2 folder' % i)
-
-        if os.path.isfile(file_name4):
-            if os.path.isfile(save_name4):
-                t, v, hdr = rw(file_name4, nhdr)
-                ww(t, v, save_name4, hdr)
-                print('File #%05d in rt_4 folder' % i)
-            else:
-                t, v, hdr = rw(file_name4, nhdr)
-                ww(t, v, save_name4, hdr)
-                print('File #%05d in rt_4 folder' % i)
-
-        if os.path.isfile(file_name8):
-            if os.path.isfile(save_name8):
-                t, v, hdr = rw(file_name8, nhdr)
-                ww(t, v, save_name8, hdr)
-                print('File #%05d in rt_8 folder' % i)
-            else:
-                t, v, hdr = rw(file_name8, nhdr)
-                ww(t, v, save_name8, hdr)
-                print('File #%05d in rt_8 folder' % i)
-
-    # Downsamples waveforms using given fsps
-    for i in range(start, end + 1):
-        file_name1 = str(filt_path_1 / 'raw' / 'D3--waveforms--%05d.txt') % i
-        file_name2 = str(filt_path_2 / 'raw' / 'D3--waveforms--%05d.txt') % i
-        file_name4 = str(filt_path_4 / 'raw' / 'D3--waveforms--%05d.txt') % i
-        file_name8 = str(filt_path_8 / 'raw' / 'D3--waveforms--%05d.txt') % i
-        save_name1 = str(filt_path_1 / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%05d.txt') % i
-        save_name2 = str(filt_path_2 / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%05d.txt') % i
-        save_name4 = str(filt_path_4 / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%05d.txt') % i
-        save_name8 = str(filt_path_8 / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%05d.txt') % i
-
-        if os.path.isfile(save_name1) and os.path.isfile(save_name2) and os.path.isfile(save_name4) and \
-                os.path.isfile(save_name8):
-            print('File #%05d downsampled' % i)
-        else:
-            if os.path.isfile(file_name1) and os.path.isfile(file_name2) and os.path.isfile(file_name4) and \
-                    os.path.isfile(file_name8):
-                print('Downsampling file #%05d' % i)
-                if not os.path.isfile(save_name1):
-                    t, v, hdr = rw(file_name1, nhdr)
-                    t_ds, v_ds = downsample(t, v, fsps, fsps_new)
-                    ww(t_ds, v_ds, save_name1, hdr)
-                if not os.path.isfile(save_name2):
-                    t, v, hdr = rw(file_name2, nhdr)
-                    t_ds, v_ds = downsample(t, v, fsps, fsps_new)
-                    ww(t_ds, v_ds, save_name2, hdr)
-                if not os.path.isfile(save_name4):
-                    t, v, hdr = rw(file_name4, nhdr)
-                    t_ds, v_ds = downsample(t, v, fsps, fsps_new)
-                    ww(t_ds, v_ds, save_name4, hdr)
-                if not os.path.isfile(save_name8):
-                    t, v, hdr = rw(file_name8, nhdr)
-                    t_ds, v_ds = downsample(t, v, fsps, fsps_new)
-                    ww(t_ds, v_ds, save_name8, hdr)
-
-    # Digitizes waveforms using given noise
-    for i in range(start, end + 1):
-        file_name1 = str(filt_path_1 / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%05d.txt') % i
-        file_name2 = str(filt_path_2 / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%05d.txt') % i
-        file_name4 = str(filt_path_4 / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%05d.txt') % i
-        file_name8 = str(filt_path_8 / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%05d.txt') % i
-        save_name1 = str(filt_path_1 / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%05d.txt') % i
-        save_name2 = str(filt_path_2 / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%05d.txt') % i
-        save_name4 = str(filt_path_4 / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%05d.txt') % i
-        save_name8 = str(filt_path_8 / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%05d.txt') % i
-
-        if os.path.isfile(save_name1) and os.path.isfile(save_name2) and os.path.isfile(save_name4) and \
-                os.path.isfile(save_name8):
-            print('File #%05d digitized' % i)
-        else:
-            if os.path.isfile(file_name1) and os.path.isfile(file_name2) and os.path.isfile(file_name4) and \
-                    os.path.isfile(file_name8):
-                print('Digitizing file #%05d' % i)
-                if not os.path.isfile(save_name1):
-                    t, v, hdr = rw(file_name1, nhdr)
-                    v_dig = digitize(v, noise)
-                    ww(t, v_dig, save_name1, hdr)
-                if not os.path.isfile(save_name2):
-                    t, v, hdr = rw(file_name2, nhdr)
-                    v_dig = digitize(v, noise)
-                    ww(t, v_dig, save_name2, hdr)
-                if not os.path.isfile(save_name4):
-                    t, v, hdr = rw(file_name4, nhdr)
-                    v_dig = digitize(v, noise)
-                    ww(t, v_dig, save_name4, hdr)
-                if not os.path.isfile(save_name8):
-                    t, v, hdr = rw(file_name8, nhdr)
-                    v_dig = digitize(v, noise)
-                    ww(t, v_dig, save_name8, hdr)
+    # Plots and saves average waveforms
+    average_waveform(start, end, dest_path, 'rt_1', 'No Shaping', nhdr, fsps_new)
+    average_waveform(start, end, dest_path, 'rt_2', '2x Rise Time Shaping', nhdr, fsps_new)
+    average_waveform(start, end, dest_path, 'rt_4', '4x Rise Time Shaping', nhdr, fsps_new)
+    average_waveform(start, end, dest_path, 'rt_8', '8x Rise Time Shaping', nhdr, fsps_new)
 
     # Writes info file
     info_file(date_time, data_path, dest_path, pmt_hv, gain, offset, trig_delay, amp, fsps, band, nfilter, r)
