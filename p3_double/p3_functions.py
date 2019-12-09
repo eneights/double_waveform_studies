@@ -4,8 +4,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
-from scipy.optimize import curve_fit
-from scipy.stats import norm
+import random
 
 
 # FILE READING/WRITING
@@ -439,3 +438,200 @@ def copy_d_waveforms(double_file_array, data_path, filt_path1, filt_path2, filt_
                 t, v, hdr = rw(file_name8, nhdr)
                 ww(t, v, save_name8, hdr)
                 print('File #%s in double_spe_8 folder' % item)
+
+
+# Given a time array, voltage array, sample rate, and new sample rate, creates downsampled time and voltage arrays
+def downsample(t, v, fsps, fsps_new):
+    steps = int(fsps / fsps_new + 0.5)
+    idx_start = random.randint(0, steps - 1)        # Picks a random index to start at
+    t_ds = np.array([])
+    v_ds = np.array([])
+    for i in range(idx_start, len(v) - 1, steps):   # Creates time & voltage arrays that digitizer would detect
+        t_ds = np.append(t_ds, t[i])
+        v_ds = np.append(v_ds, v[i])
+    return t_ds, v_ds
+
+
+# Converts voltage array to bits and adds noise
+def digitize(v, noise):
+    v_bits = np.array([])
+    for i in range(len(v)):
+        v_bits = np.append(v_bits, (v[i] * (2 ** 14 - 1) * 2 + 0.5))        # Converts voltage array to bits
+    noise_array = np.random.normal(scale=noise, size=len(v_bits))           # Creates noise array
+    v_digitized = np.add(v_bits, noise_array)                               # Adds noise to digitized values
+    v_digitized = v_digitized.astype(int)
+    return v_digitized
+
+
+# Downsamples and digitizes files
+def down_dig(single_file_array, double_file_array, filt_path1, filt_path2, filt_path4, filt_path8, dest_path,
+             delay_folder, fsps, fsps_new, noise, nhdr):
+    for item in single_file_array:
+        file_name1 = str(dest_path / 'rt_1_single' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        file_name2 = str(dest_path / 'rt_2_single' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        file_name4 = str(dest_path / 'rt_4_single' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        file_name8 = str(dest_path / 'rt_8_single' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        save_name1 = str(dest_path / 'rt_1_single_2' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        save_name2 = str(dest_path / 'rt_2_single_2' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        save_name4 = str(dest_path / 'rt_4_single_2' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        save_name8 = str(dest_path / 'rt_8_single_2' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+
+        if os.path.isfile(file_name1):
+            if os.path.isfile(save_name1):
+                print('File #%s downsampled' % item)
+            else:
+                t, v, hdr = rw(file_name1, nhdr)
+                ww(t, v, save_name1, hdr)
+                print('File #%s downsampled' % item)
+
+        if os.path.isfile(file_name2):
+            if os.path.isfile(save_name2):
+                print('File #%s downsampled' % item)
+            else:
+                t, v, hdr = rw(file_name2, nhdr)
+                ww(t, v, save_name2, hdr)
+                print('File #%s downsampled' % item)
+
+        if os.path.isfile(file_name4):
+            if os.path.isfile(save_name4):
+                print('File #%s downsampled' % item)
+            else:
+                t, v, hdr = rw(file_name4, nhdr)
+                ww(t, v, save_name4, hdr)
+                print('File #%s downsampled' % item)
+
+        if os.path.isfile(file_name8):
+            if os.path.isfile(save_name8):
+                print('File #%s downsampled' % item)
+            else:
+                t, v, hdr = rw(file_name8, nhdr)
+                ww(t, v, save_name8, hdr)
+                print('File #%s downsampled' % item)
+
+        file_name1 = str(dest_path / 'rt_1_single' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        file_name2 = str(dest_path / 'rt_2_single' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        file_name4 = str(dest_path / 'rt_4_single' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        file_name8 = str(dest_path / 'rt_8_single' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        save_name1 = str(dest_path / 'rt_1_single_2' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        save_name2 = str(dest_path / 'rt_2_single_2' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        save_name4 = str(dest_path / 'rt_4_single_2' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+        save_name8 = str(dest_path / 'rt_8_single_2' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                         'D3--waveforms--%s.txt') % item
+
+        if os.path.isfile(file_name1):
+            if os.path.isfile(save_name1):
+                print('File #%s digitized' % item)
+            else:
+                t, v, hdr = rw(file_name1, nhdr)
+                ww(t, v, save_name1, hdr)
+                print('File #%s digitized' % item)
+
+        if os.path.isfile(file_name2):
+            if os.path.isfile(save_name2):
+                print('File #%s digitized' % item)
+            else:
+                t, v, hdr = rw(file_name2, nhdr)
+                ww(t, v, save_name2, hdr)
+                print('File #%s digitized' % item)
+
+        if os.path.isfile(file_name4):
+            if os.path.isfile(save_name4):
+                print('File #%s digitized' % item)
+            else:
+                t, v, hdr = rw(file_name4, nhdr)
+                ww(t, v, save_name4, hdr)
+                print('File #%s digitized' % item)
+
+        if os.path.isfile(file_name8):
+            if os.path.isfile(save_name8):
+                print('File #%s digitized' % item)
+            else:
+                t, v, hdr = rw(file_name8, nhdr)
+                ww(t, v, save_name8, hdr)
+                print('File #%s digitized' % item)
+
+    for item in double_file_array:
+        file_name1 = str(filt_path1 / 'raw' / delay_folder / 'D3--waveforms--%s.txt') % item
+        file_name2 = str(filt_path2 / 'raw' / delay_folder / 'D3--waveforms--%s.txt') % item
+        file_name4 = str(filt_path4 / 'raw' / delay_folder / 'D3--waveforms--%s.txt') % item
+        file_name8 = str(filt_path8 / 'raw' / delay_folder / 'D3--waveforms--%s.txt') % item
+        down_name1 = str(filt_path1 / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                         'D3--waveforms--%s.txt') % item
+        down_name2 = str(filt_path2 / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                         'D3--waveforms--%s.txt') % item
+        down_name4 = str(filt_path4 / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                         'D3--waveforms--%s.txt') % item
+        down_name8 = str(filt_path8 / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                         'D3--waveforms--%s.txt') % item
+        dig_name1 = str(filt_path1 / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                        'D3--waveforms--%s.txt') % item
+        dig_name2 = str(filt_path2 / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                        'D3--waveforms--%s.txt') % item
+        dig_name4 = str(filt_path4 / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                        'D3--waveforms--%s.txt') % item
+        dig_name8 = str(filt_path8 / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                        'D3--waveforms--%s.txt') % item
+
+        if os.path.isfile(down_name1) and os.path.isfile(down_name2) and os.path.isfile(down_name4) and \
+                os.path.isfile(down_name8):
+            print('File #%s downsampled' % item)
+        else:
+            if os.path.isfile(file_name1) and os.path.isfile(file_name2) and os.path.isfile(file_name4) and \
+                    os.path.isfile(file_name8):
+                print('Downsampling file #%s' % item)
+                if not os.path.isfile(down_name1):
+                    t, v, hdr = rw(file_name1, nhdr)
+                    t_ds, v_ds = downsample(t, v, fsps, fsps_new)
+                    ww(t_ds, v_ds, down_name1, hdr)
+                if not os.path.isfile(down_name2):
+                    t, v, hdr = rw(file_name2, nhdr)
+                    t_ds, v_ds = downsample(t, v, fsps, fsps_new)
+                    ww(t_ds, v_ds, down_name2, hdr)
+                if not os.path.isfile(down_name4):
+                    t, v, hdr = rw(file_name4, nhdr)
+                    t_ds, v_ds = downsample(t, v, fsps, fsps_new)
+                    ww(t_ds, v_ds, down_name4, hdr)
+                if not os.path.isfile(down_name8):
+                    t, v, hdr = rw(file_name8, nhdr)
+                    t_ds, v_ds = downsample(t, v, fsps, fsps_new)
+                    ww(t_ds, v_ds, down_name8, hdr)
+
+        if os.path.isfile(dig_name1) and os.path.isfile(dig_name2) and os.path.isfile(dig_name4) and \
+                os.path.isfile(dig_name8):
+            print('File #%s digitized' % item)
+        else:
+            if os.path.isfile(file_name1) and os.path.isfile(file_name2) and os.path.isfile(file_name4) and \
+                    os.path.isfile(file_name8):
+                print('Digitizing file #%s' % item)
+                if not os.path.isfile(dig_name1):
+                    t, v, hdr = rw(file_name1, nhdr)
+                    v_dig = digitize(v, noise)
+                    ww(t, v_dig, dig_name1, hdr)
+                if not os.path.isfile(dig_name2):
+                    t, v, hdr = rw(file_name2, nhdr)
+                    v_dig = digitize(v, noise)
+                    ww(t, v_dig, dig_name2, hdr)
+                if not os.path.isfile(dig_name4):
+                    t, v, hdr = rw(file_name4, nhdr)
+                    v_dig = digitize(v, noise)
+                    ww(t, v_dig, dig_name4, hdr)
+                if not os.path.isfile(dig_name8):
+                    t, v, hdr = rw(file_name8, nhdr)
+                    v_dig = digitize(v, noise)
+                    ww(t, v_dig, dig_name8, hdr)
+

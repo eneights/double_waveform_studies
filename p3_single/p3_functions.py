@@ -3,11 +3,7 @@ import csv
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-import math
 from pathlib import Path
-from scipy.optimize import curve_fit
-from scipy.stats import norm
-from scipy import signal
 import random
 
 # FILE READING/WRITING
