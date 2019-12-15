@@ -23,12 +23,12 @@ def create_double_spe(nloops, date, filter_band, nhdr, delay, delay_folder, fsps
 
     # Shapes single and double waveforms
     for item in single_file_array2:
-        save_name1 = str(filt_path1_s / 'D2--waveforms--%s.txt') % item
-        save_name2 = str(filt_path2_s / 'D2--waveforms--%s.txt') % item
-        save_name4 = str(filt_path4_s / 'D2--waveforms--%s.txt') % item
-        save_name8 = str(filt_path8_s / 'D2--waveforms--%s.txt') % item
+        save_name1 = str(filt_path1_s / 'D2--waveforms--%05d.txt') % item
+        save_name2 = str(filt_path2_s / 'D2--waveforms--%05d.txt') % item
+        save_name4 = str(filt_path4_s / 'D2--waveforms--%05d.txt') % item
+        save_name8 = str(filt_path8_s / 'D2--waveforms--%05d.txt') % item
 
-        # shaping(save_name1, save_name2, save_name4, save_name8, item, fsps, nhdr)
+        shaping(save_name1, save_name2, save_name4, save_name8, item, fsps, nhdr)
 
     for item in double_file_array:
         save_name1 = str(delay_path1 / 'D2--waveforms--%s.txt') % item
@@ -69,7 +69,7 @@ def create_double_spe(nloops, date, filter_band, nhdr, delay, delay_folder, fsps
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(prog="create_double_spe", description="Adds spe waveforms")
+    parser = argparse.ArgumentParser(prog="p2_create_double", description="Adds spe waveforms")
     parser.add_argument("--nloops", type=int, help='number of double spe files to create (default=1000)', default=1000)
     parser.add_argument("--date", type=int, help='date of data acquisition (default=20190513)', default=20190513)
     parser.add_argument("--fil_band", type=str, help='folder name for data (default=full_bdw_no_nf)',

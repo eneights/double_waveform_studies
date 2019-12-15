@@ -647,10 +647,10 @@ def single_set(single_file_array, single_file_array2, nloops, single_path, filt_
         file = single_file_array[np.random.randint(len(single_file_array))]
         file_num = '%05d' % file
 
-        if not os.path.isfile(filt_path1_s / str('D2--waveforms--%s.txt' % file_num)):
+        if not os.path.isfile(filt_path1_s / str('D2--waveforms--%05d.txt' % file_num)):
             single_file_array2 = np.append(single_file_array2, file_num)
-            t, v, hdr = rw(str(single_path / 'D2--waveforms--%s.txt') % file_num, nhdr)
-            ww(t, v, str(filt_path1_s / 'D2--waveforms--%s.txt') % file_num, hdr)
+            t, v, hdr = rw(str(single_path / 'D2--waveforms--%05d.txt') % file_num, nhdr)
+            ww(t, v, str(filt_path1_s / 'D2--waveforms--%05d.txt') % file_num, hdr)
             print('File #%05d added' % file)
 
     return single_file_array2

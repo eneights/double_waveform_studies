@@ -4,6 +4,8 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
+from scipy.optimize import curve_fit
+from scipy.stats import norm
 import random
 
 
@@ -44,6 +46,47 @@ def ww(x, y, file_name, hdr):
         line = '%.7E,%f\n' % (ix, iy)
         myfile.write(line)
     myfile.close()                          # Closes waveform file
+
+
+# Creates text file with time of beginning of spe, time of end of spe, charge, amplitude, and fwhm for a single spe file
+def save_calculations_s(dest_path, item, t1, t2, charge, amplitude, fwhm, shaping):
+    file_name = str(dest_path / 'calculations_single' / shaping / 'D3--waveforms--%s.txt') % item
+    myfile = open(file_name, 'w')
+    myfile.write('t1,' + str(t1))
+    myfile.write('\nt2,' + str(t2))
+    myfile.write('\ncharge,' + str(charge))
+    myfile.write('\namplitude,' + str(amplitude))
+    myfile.write('\nfwhm,' + str(fwhm))
+    myfile.close()
+
+
+# Creates text file with time of beginning of spe, time of end of spe, charge, amplitude, fwhm for a double spe file
+def save_calculations_d(dest_path, delay_folder, item, t1, t2, charge, amplitude, fwhm, shaping):
+    file_name = str(dest_path / 'calculations_double' / delay_folder / shaping / 'D3--waveforms--%s.txt') % item
+    myfile = open(file_name, 'w')
+    myfile.write('t1,' + str(t1))
+    myfile.write('\nt2,' + str(t2))
+    myfile.write('\ncharge,' + str(charge))
+    myfile.write('\namplitude,' + str(amplitude))
+    myfile.write('\nfwhm,' + str(fwhm))
+    myfile.close()
+
+
+# Reads calculation file
+def read_calc(filename):
+    myfile = open(filename, 'r')  # Opens file with calculations
+    csv_reader = csv.reader(myfile)
+    file_array = np.array([])
+    for row in csv_reader:  # Creates array with calculation data
+        file_array = np.append(file_array, float(row[1]))
+    myfile.close()
+    t1 = file_array[0]
+    t2 = file_array[1]
+    charge = file_array[2]
+    amp = file_array[3]
+    fwhm = file_array[4]
+
+    return t1, t2, charge, amp, fwhm
 
 
 # Creates info file
@@ -94,6 +137,194 @@ def read_info(myfile):
 
     return i_date, i_date_time, i_fil_band, i_nhdr, i_fsps, i_baseline, i_r, i_pmt_hv, i_gain, i_offset, i_trig_delay, \
         i_amp, i_band, i_nfilter
+
+
+# Creates text file with data from an array
+def write_hist_data_s(array, dest_path, name):
+    array = np.sort(array)
+    file_name = Path(Path(dest_path) / 'hist_data_single' / name)
+
+    myfile = open(file_name, 'w')
+    for item in array:  # Writes an array item on each line of file
+        myfile.write(str(item) + '\n')
+    myfile.close()
+
+
+# Creates text file with data from an array
+def write_hist_data_d(array, dest_path, name):
+    array = np.sort(array)
+    file_name = Path(Path(dest_path) / 'hist_data_double' / name)
+
+    myfile = open(file_name, 'w')
+    for item in array:  # Writes an array item on each line of file
+        myfile.write(str(item) + '\n')
+    myfile.close()
+
+
+# HISTOGRAMS
+
+
+# Defines Gaussian function (a is amplitude, b is mean, c is standard deviation)
+def func(x, a, b, c):
+    gauss = a * np.exp(-(x - b) ** 2.0 / (2 * c ** 2))
+    return gauss
+
+
+# Finds Gaussian fit of array
+def gauss_fit(array, bins, n):
+    b_est, c_est = norm.fit(array)      # Calculates mean & standard deviation based on entire array
+    range_min1 = b_est - c_est          # Calculates lower limit of Gaussian fit (1sigma estimation)
+    range_max1 = b_est + c_est          # Calculates upper limit of Gaussian fit (1sigma estimation)
+
+    bins_range1 = np.linspace(range_min1, range_max1, 10000)    # Creates array of bins between upper & lower limits
+    n_range1 = np.interp(bins_range1, bins, n)              # Interpolates & creates array of y axis values
+    guess1 = [1, float(b_est), float(c_est)]                # Defines guess for values of a, b & c in Gaussian fit
+    popt1, pcov1 = curve_fit(func, bins_range1, n_range1, p0=guess1, maxfev=10000)      # Finds Gaussian fit
+    mu1 = float(format(popt1[1], '.2e'))                        # Calculates mean based on 1sigma guess
+    sigma1 = np.abs(float(format(popt1[2], '.2e')))     # Calculates standard deviation based on 1sigma estimation
+    range_min2 = mu1 - 2 * sigma1                       # Calculates lower limit of Gaussian fit (2sigma)
+    range_max2 = mu1 + 2 * sigma1                       # Calculates upper limit of Gaussian fit (2sigma)
+    bins_range2 = np.linspace(range_min2, range_max2, 10000)    # Creates array of bins between upper & lower limits
+    n_range2 = np.interp(bins_range2, bins, n)          # Interpolates & creates array of y axis values
+    guess2 = [1, mu1, sigma1]                           # Defines guess for values of a, b & c in Gaussian fit
+    popt2, pcov2 = curve_fit(func, bins_range2, n_range2, p0=guess2, maxfev=10000)      # Finds Gaussian fit
+
+    return bins_range2, popt2, pcov2
+
+
+# Creates histogram given an array
+def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename, type):
+
+    path = Path(Path(dest_path) / 'plots')
+    n, bins, patches = plt.hist(array, nbins)           # Plots histogram
+    bins = np.delete(bins, len(bins) - 1)
+    bins_diff = bins[1] - bins[0]
+    bins = np.linspace(bins[0] + bins_diff / 2, bins[len(bins) - 1] + bins_diff / 2, len(bins))
+
+    bins_range, popt, pcov = gauss_fit(array, bins, n)                  # Finds Gaussian fit
+    plt.plot(bins_range, func(bins_range, *popt), color='red')          # Plots Gaussian fit (mean +/- 2sigma)
+
+    mu2 = float(format(popt[1], '.2e'))                 # Calculates mean
+    sigma2 = np.abs(float(format(popt[2], '.2e')))      # Calculates standard deviation
+
+    plt.xlabel(xaxis + ' (' + units + ')')
+    plt.title(title + ' of SPE\n mean: ' + str(mu2) + ' ' + units + ', SD: ' + str(sigma2) + ' ' + units)
+    plt.savefig(path / str(filename + '.png'), dpi=360)         # Plots histogram with Gaussian fit
+
+    if type == 'single':
+        write_hist_data_s(array, dest_path, filename + '.txt')
+    else:
+        write_hist_data_d(array, dest_path, filename + '.txt')
+
+    plt.close()
+
+    mean = mu2
+
+    return mean
+
+
+# Creates two histograms on top of each other given two arrays
+def plot_histograms(array1, array2, dest_path, nbins, xaxis, title, units, filename):
+
+    path = Path(Path(dest_path) / 'plots')
+
+    n1, bins1, patches1 = plt.hist(array1, nbins)               # Plots histogram 1
+    bins1 = np.delete(bins1, len(bins1) - 1)
+    bins_diff1 = bins1[1] - bins1[0]
+    bins1 = np.linspace(bins1[0] + bins_diff1 / 2, bins1[len(bins1) - 1] + bins_diff1 / 2, len(bins1))
+
+    bins_range1, popt1, pcov1 = gauss_fit(array1, bins1, n1)            # Finds Gaussian fit of histogram 1
+    plt.plot(bins_range1, func(bins_range1, *popt1), color='red')       # Plots Gaussian fit (mean +/- 2sigma) of hist 1
+
+    mu2_1 = float(format(popt1[1], '.2e'))                  # Calculates mean of hist 1
+    sigma2_1 = np.abs(float(format(popt1[2], '.2e')))       # Calculates standard deviation of hist 1
+
+    n2, bins2, patches2 = plt.hist(array2, nbins)               # Plots histogram 2
+    bins2 = np.delete(bins2, len(bins2) - 1)
+    bins_diff2 = bins2[1] - bins2[0]
+    bins2 = np.linspace(bins2[0] + bins_diff2 / 2, bins2[len(bins2) - 1] + bins_diff2 / 2, len(bins2))
+
+    bins_range2, popt2, pcov2 = gauss_fit(array2, bins2, n2)            # Finds Gaussian fit of histogram 2
+    plt.plot(bins_range2, func(bins_range2, *popt2), color='green')     # Plots Gaussian fit (mean +/- 2sigma) of hist 2
+
+    mu2_2 = float(format(popt2[1], '.2e'))                  # Calculates mean of hist 2
+    sigma2_2 = np.abs(float(format(popt2[2], '.2e')))       # Calculates standard deviation of hist 2
+
+    plt.xlabel(xaxis + ' (' + units + ')')
+    plt.title(title + ' of SPE\n mean (single): ' + str(mu2_1) + ' ' + units + ', SD (single): ' + str(sigma2_1) +
+              ' ' + units + '\n mean (double): ' + str(mu2_2) + ' ' + units + ', SD (double): ' + str(sigma2_2) +
+              ' ' + units, fontsize='medium')
+    plt.savefig(path / str(filename + '.png'), dpi=360)         # Plots histogram with Gaussian fit
+
+    plt.close()
+
+
+# Plots histograms for each type of calculation array
+def make_hist(charge_array, amplitude_array, fwhm_array, dest_path, bins, version, type):
+    mean_charge = plot_histogram(charge_array, dest_path, bins, 'Charge', 'Charge', 's*bit/ohm', 'charge_' + version,
+                                 type)
+    mean_amp = plot_histogram(amplitude_array, dest_path, bins, 'Voltage', 'Amplitude', 'bits', 'amplitude_' + version,
+                              type)
+    mean_fwhm = plot_histogram(fwhm_array, dest_path, bins, 'Time', 'FWHM', 's', 'fwhm_' + version, type)
+
+    return mean_charge, mean_amp, mean_fwhm
+
+
+# Plots single and double histograms for each type of calculation array on same plot
+def make_double_hist(charge_array_s, amplitude_array_s, fwhm_array_s, charge_array_d, amplitude_array_d, fwhm_array_d,
+                     dest_path, bins, version):
+    plot_histograms(charge_array_s, charge_array_d, dest_path, bins, 'Charge', 'Charge', 's*bit/ohm', 'charge_' +
+                    version)
+    plot_histograms(amplitude_array_s, amplitude_array_d, dest_path, bins, 'Voltage', 'Amplitude', 'bits',
+                    'amplitude_' + version)
+    plot_histograms(fwhm_array_s, fwhm_array_d, dest_path, bins, 'Time', 'FWHM', 's',
+                    'fwhm_' + version)
+
+
+# Plots histograms for each calculation array
+def p3_hist(dest_path, delay_folder, charge_array_s_1, charge_array_s_2, charge_array_s_4, charge_array_s_8,
+            amplitude_array_s_1, amplitude_array_s_2, amplitude_array_s_4, amplitude_array_s_8, fwhm_array_s_1,
+            fwhm_array_s_2, fwhm_array_s_4, fwhm_array_s_8, charge_array_d_1, charge_array_d_2, charge_array_d_4,
+            charge_array_d_8, amplitude_array_d_1, amplitude_array_d_2, amplitude_array_d_4, amplitude_array_d_8,
+            fwhm_array_d_1, fwhm_array_d_2, fwhm_array_d_4, fwhm_array_d_8, fsps_new):
+    print('Creating histograms')
+    mean_charge_s_1, mean_amp_s_1, mean_fwhm_s_1 = \
+        make_hist(charge_array_s_1, amplitude_array_s_1, fwhm_array_s_1, dest_path, 75, str(int(fsps_new / 1e6)) +
+                  '_Msps_rt_1_single', 'single')
+    mean_charge_s_2, mean_amp_s_2, mean_fwhm_s_2 = \
+        make_hist(charge_array_s_2, amplitude_array_s_2, fwhm_array_s_2, dest_path, 75, str(int(fsps_new / 1e6)) +
+                  '_Msps_rt_2_single', 'single')
+    mean_charge_s_4, mean_amp_s_4, mean_fwhm_s_4 = \
+        make_hist(charge_array_s_4, amplitude_array_s_4, fwhm_array_s_4, dest_path, 75, str(int(fsps_new / 1e6)) +
+                  '_Msps_rt_4_single', 'single')
+    mean_charge_s_8, mean_amp_s_8, mean_fwhm_s_8 = \
+        make_hist(charge_array_s_8, amplitude_array_s_8, fwhm_array_s_8, dest_path, 75, str(int(fsps_new / 1e6)) +
+                  '_Msps_rt_8_single', 'single')
+    mean_charge_d_1, mean_amp_d_1, mean_fwhm_d_1 = \
+        make_hist(charge_array_d_1, amplitude_array_d_1, fwhm_array_d_1, dest_path, 75, str(int(fsps_new / 1e6)) +
+                  '_Msps_rt_1_double_' + delay_folder, 'double')
+    mean_charge_d_2, mean_amp_d_2, mean_fwhm_d_2 = \
+        make_hist(charge_array_d_2, amplitude_array_d_2, fwhm_array_d_2, dest_path, 75, str(int(fsps_new / 1e6)) +
+                  '_Msps_rt_2_double_' + delay_folder, 'double')
+    mean_charge_d_4, mean_amp_d_4, mean_fwhm_d_4 = \
+        make_hist(charge_array_d_4, amplitude_array_d_4, fwhm_array_d_4, dest_path, 75, str(int(fsps_new / 1e6)) +
+                  '_Msps_rt_4_double_' + delay_folder, 'double')
+    mean_charge_d_8, mean_amp_d_8, mean_fwhm_d_8 = \
+        make_hist(charge_array_d_8, amplitude_array_d_8, fwhm_array_d_8, dest_path, 75, str(int(fsps_new / 1e6)) +
+                  '_Msps_rt_8_double_' + delay_folder, 'double')
+    make_double_hist(charge_array_s_1, amplitude_array_s_1, fwhm_array_s_1, charge_array_d_1, amplitude_array_d_1,
+                     fwhm_array_d_1, dest_path, 75, str(int(fsps_new / 1e6)) + '_Msps_rt_1' + delay_folder)
+    make_double_hist(charge_array_s_2, amplitude_array_s_2, fwhm_array_s_2, charge_array_d_2, amplitude_array_d_2,
+                     fwhm_array_d_2, dest_path, 75, str(int(fsps_new / 1e6)) + '_Msps_rt_2' + delay_folder)
+    make_double_hist(charge_array_s_4, amplitude_array_s_4, fwhm_array_s_4, charge_array_d_4, amplitude_array_d_4,
+                     fwhm_array_d_4, dest_path, 75, str(int(fsps_new / 1e6)) + '_Msps_rt_4' + delay_folder)
+    make_double_hist(charge_array_s_8, amplitude_array_s_8, fwhm_array_s_8, charge_array_d_8, amplitude_array_d_8,
+                     fwhm_array_d_8, dest_path, 75, str(int(fsps_new / 1e6)) + '_Msps_rt_8' + delay_folder)
+
+    return mean_charge_s_1, mean_amp_s_1, mean_fwhm_s_1, mean_charge_s_2, mean_amp_s_2, mean_fwhm_s_2, mean_charge_s_4, \
+           mean_amp_s_4, mean_fwhm_s_4, mean_charge_s_8, mean_amp_s_8, mean_fwhm_s_8, mean_charge_d_1, mean_amp_d_1, \
+           mean_fwhm_d_1, mean_charge_d_2, mean_amp_d_2, mean_fwhm_d_2, mean_charge_d_4, mean_amp_d_4, mean_fwhm_d_4,\
+           mean_charge_d_8, mean_amp_d_8, mean_fwhm_d_8
 
 
 # AVERAGE/PLOT WAVEFORM
@@ -170,6 +401,118 @@ def show_waveform(file_name, version):
     plt.ylabel('Voltage (V)')
     plt.title(version + ' Waveform')
     plt.show()
+
+
+# CALCULATIONS
+
+
+# Returns time when spe waveform begins and time when spe waveform ends
+def calculate_t1_t2(t, v):
+    idx1 = np.inf
+    idx2 = np.inf
+    idx3 = np.inf
+
+    for i in range(len(v)):
+        if v[i] <= 0.1 * min(v):
+            idx1 = i
+            break
+        else:
+            continue
+
+    if idx1 == np.inf:
+        return 0, -1
+    else:
+        for i in range(idx1, len(v)):
+            if v[i] == min(v):
+                idx2 = i
+                break
+            else:
+                continue
+        if idx2 == np.inf:
+            return 0, -1
+        else:
+            for i in range(len(v) - 1, idx2, -1):
+                if v[i] <= 0.1 * min(v):
+                    idx3 = i
+                    break
+                else:
+                    continue
+
+            t1 = t[idx1]                    # Finds time of beginning of spe
+            t2 = t[idx3]                    # Finds time of end of spe
+
+            return t1, t2
+
+
+# Returns the average baseline (baseline noise level)
+def calculate_average(t, v):
+    v_sum = 0
+    t1, t2 = calculate_t1_t2(t, v)
+
+    try:
+        for i in range(int(np.where(t == t1)[0] - (.1 * len(t)))):
+            v_sum += v[i]
+
+        average = v_sum / (int(np.where(t == t1)[0] - (.1 * len(t))))
+
+        return average
+
+    except:
+        return np.inf
+
+
+# Returns charge of spe (as a positive value)
+def calculate_charge(t, v, r):
+    vsum = 0
+    tvals = np.linspace(t[0], t[len(t) - 1], 5000)      # Creates array of times over entire timespan
+    vvals = np.interp(tvals, t, v)                      # Interpolates & creates array of voltages over entire timespan
+
+    for i in range(len(tvals)):                         # Calculates sum of all voltages in full timespan
+        vsum += vvals[i]
+    charge = -1 * (tvals[len(tvals) - 1]) * vsum / (len(tvals) * r)     # Calculates charge
+
+    return charge
+
+
+# Returns the amplitude of spe as a positive value (minimum voltage)
+def calculate_amp(t, v):
+    avg = calculate_average(t, v)       # Calculates value of baseline voltage
+    amp = avg - np.amin(v)              # Calculates max amplitude
+
+    return amp
+
+
+# Returns the full width half max (FWHM) of spe
+def calculate_fwhm(t, v):
+    time1 = np.inf
+    time2 = np.inf
+
+    t1, t2 = calculate_t1_t2(t, v)                      # Calculates start and end times of spe
+    avg = calculate_average(t, v)                       # Calculates average baseline
+    half_max = ((min(v) - avg) / 2).item()              # Calculates 50% max value
+
+    tvals1 = np.linspace(t1, t[np.where(v == min(v))[0][0]], 2500)
+    vvals1 = np.interp(tvals1, t, v)
+    tvals2 = np.linspace(t[np.where(v == min(v))[0][0]], t2, 2500)
+    vvals2 = np.interp(tvals2, t, v)
+
+    for i in range(len(vvals1)):
+        if vvals1[i] <= half_max:
+            time1 = tvals1[i]
+            break
+        else:
+            continue
+
+    for i in range(len(vvals2) - 1, 0, -1):
+        if vvals2[i] <= half_max:
+            time2 = tvals2[i]
+            break
+        else:
+            continue
+
+    half_max_time = time2 - time1
+
+    return half_max_time
 
 
 # P3
@@ -275,6 +618,18 @@ def make_folders(dest_path, filt_path1, filt_path2, filt_path4, filt_path8, fsps
     if not os.path.exists(Path(filt_path8 / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps')) / delay_folder):
         print('Creating rt 8 digitized delay folder')
         os.mkdir(Path(filt_path8 / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder))
+    if not os.path.exists(Path(Path(dest_path / 'rt_1_single_2'))):
+        print('Creating single rt 1 folder')
+        os.mkdir(Path(Path(dest_path / 'rt_1_single_2')))
+    if not os.path.exists(Path(Path(dest_path / 'rt_2_single_2'))):
+        print('Creating single rt 2 folder')
+        os.mkdir(Path(Path(dest_path / 'rt_2_single_2')))
+    if not os.path.exists(Path(Path(dest_path / 'rt_4_single_2'))):
+        print('Creating single rt 4 folder')
+        os.mkdir(Path(Path(dest_path / 'rt_4_single_2')))
+    if not os.path.exists(Path(Path(dest_path / 'rt_8_single_2'))):
+        print('Creating single rt 8 folder')
+        os.mkdir(Path(Path(dest_path / 'rt_8_single_2')))
     if not os.path.exists(Path(Path(dest_path / 'rt_1_single_2') / 'raw')):
         print('Creating single rt 1 raw folder')
         os.mkdir(Path(Path(dest_path / 'rt_1_single_2') / 'raw'))
@@ -320,8 +675,44 @@ def make_folders(dest_path, filt_path1, filt_path2, filt_path4, filt_path8, fsps
         print('Creating single rt 8 digitized folder')
         os.mkdir(Path(Path(dest_path / 'rt_8_single_2') / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps')))
     if not os.path.exists(Path(dest_path / 'hist_data_single')):
-        print('Creating histogram data folder')
+        print('Creating single histogram data folder')
         os.mkdir(Path(dest_path / 'hist_data_single'))
+    if not os.path.exists(Path(dest_path / 'calculations_single')):
+        print('Creating single calculations data folder')
+        os.mkdir(Path(dest_path / 'calculations_single'))
+    if not os.path.exists(Path(dest_path / 'calculations_single' / 'rt_1')):
+        print('Creating single rt_1 calculations folder')
+        os.mkdir(Path(dest_path / 'calculations_single' / 'rt_1'))
+    if not os.path.exists(Path(dest_path / 'calculations_single' / 'rt_2')):
+        print('Creating single rt_2 calculations folder')
+        os.mkdir(Path(dest_path / 'calculations_single' / 'rt_2'))
+    if not os.path.exists(Path(dest_path / 'calculations_single' / 'rt_4')):
+        print('Creating single rt_4 calculations folder')
+        os.mkdir(Path(dest_path / 'calculations_single' / 'rt_4'))
+    if not os.path.exists(Path(dest_path / 'calculations_single' / 'rt_8')):
+        print('Creating single rt_8 calculations folder')
+        os.mkdir(Path(dest_path / 'calculations_single' / 'rt_8'))
+    if not os.path.exists(Path(dest_path / 'hist_data_double')):
+        print('Creating single histogram data folder')
+        os.mkdir(Path(dest_path / 'hist_data_double'))
+    if not os.path.exists(Path(dest_path / 'calculations_double')):
+        print('Creating double calculations data folder')
+        os.mkdir(Path(dest_path / 'calculations_double'))
+    if not os.path.exists(Path(dest_path / 'calculations_double' / delay_folder)):
+        print('Creating double calculations delay folder')
+        os.mkdir(Path(dest_path / 'calculations_double' / delay_folder))
+    if not os.path.exists(Path(dest_path / 'calculations_double' / delay_folder / 'rt_1')):
+        print('Creating double rt_1 calculations folder')
+        os.mkdir(Path(dest_path / 'calculations_double' / delay_folder / 'rt_1'))
+    if not os.path.exists(Path(dest_path / 'calculations_double' / delay_folder / 'rt_2')):
+        print('Creating double rt_2 calculations folder')
+        os.mkdir(Path(dest_path / 'calculations_double' / delay_folder / 'rt_2'))
+    if not os.path.exists(Path(dest_path / 'calculations_double' / delay_folder / 'rt_4')):
+        print('Creating double rt_4 calculations folder')
+        os.mkdir(Path(dest_path / 'calculations_double' / delay_folder / 'rt_4'))
+    if not os.path.exists(Path(dest_path / 'calculations_double' / delay_folder / 'rt_8')):
+        print('Creating double rt_8 calculations folder')
+        os.mkdir(Path(dest_path / 'calculations_double' / delay_folder / 'rt_8'))
     if not os.path.exists(Path(dest_path / 'plots')):
         print('Creating plots folder')
         os.mkdir(Path(dest_path / 'plots'))
@@ -335,15 +726,33 @@ def initial_arrays(filt_path1_s, delay_path1):
     single_file_array = np.array([])
     double_file_array = np.array([])
 
-    print('Checking existing single spe files...')
+    print('Checking existing d3 single spe files...')
     for i in range(99999):                                  # Makes array of all spe file names
         file_name = 'D3--waveforms--%05d.txt' % i
         if os.path.isfile(filt_path1_s / file_name):
             single_file_array = np.append(single_file_array, i)
 
-    print('Checking existing double spe files...')
+    print('Checking existing d3 double spe files...')
     for filename in os.listdir(delay_path1):                # Checks for existing double spe files
-        print(filename, 'is a file')
+        files_added = filename[15:27]
+        double_file_array = np.append(double_file_array, files_added)
+
+    return single_file_array, double_file_array
+
+
+# Makes arrays of existing single and double spe files
+def initial_arrays_2(filt_path1_s, delay_path1):
+    single_file_array = np.array([])
+    double_file_array = np.array([])
+
+    print('Checking existing d2 single spe files...')
+    for i in range(99999):                                  # Makes array of all spe file names
+        file_name = 'D2--waveforms--%05d.txt' % i
+        if os.path.isfile(filt_path1_s / file_name):
+            single_file_array = np.append(single_file_array, i)
+
+    print('Checking existing d2 double spe files...')
+    for filename in os.listdir(delay_path1):                # Checks for existing double spe files
         files_added = filename[15:27]
         double_file_array = np.append(double_file_array, files_added)
 
@@ -351,52 +760,57 @@ def initial_arrays(filt_path1_s, delay_path1):
 
 
 # Copies single spe waveforms with 1x, 2x, 4x, and 8x initial rise times to d3 folder
-def copy_s_waveforms(single_file_array, data_path, dest_path, nhdr):
+def copy_s_waveforms(single_file_array, single_file_array_2, data_path, dest_path, nhdr):
     for item in single_file_array:
-        file_name1 = str(data_path / 'rt_1_single' / 'D2--waveforms--%s.txt') % item
-        file_name2 = str(data_path / 'rt_2_single' / 'D2--waveforms--%s.txt') % item
-        file_name4 = str(data_path / 'rt_4_single' / 'D2--waveforms--%s.txt') % item
-        file_name8 = str(data_path / 'rt_8_single' / 'D2--waveforms--%s.txt') % item
-        save_name1 = str(dest_path / 'rt_1_single_2' / 'raw' / 'D3--waveforms--%s.txt') % item
-        save_name2 = str(dest_path / 'rt_2_single_2' / 'raw' / 'D3--waveforms--%s.txt') % item
-        save_name4 = str(dest_path / 'rt_4_single_2' / 'raw' / 'D3--waveforms--%s.txt') % item
-        save_name8 = str(dest_path / 'rt_8_single_2' / 'raw' / 'D3--waveforms--%s.txt') % item
+        file_name1 = str(data_path / 'rt_1_single_2' / 'D2--waveforms--%05d.txt') % item
+        file_name2 = str(data_path / 'rt_2_single_2' / 'D2--waveforms--%05d.txt') % item
+        file_name4 = str(data_path / 'rt_4_single_2' / 'D2--waveforms--%05d.txt') % item
+        file_name8 = str(data_path / 'rt_8_single_2' / 'D2--waveforms--%05d.txt') % item
+        save_name1 = str(dest_path / 'rt_1_single_2' / 'raw' / 'D3--waveforms--%05d.txt') % item
+        save_name2 = str(dest_path / 'rt_2_single_2' / 'raw' / 'D3--waveforms--%05d.txt') % item
+        save_name4 = str(dest_path / 'rt_4_single_2' / 'raw' / 'D3--waveforms--%05d.txt') % item
+        save_name8 = str(dest_path / 'rt_8_single_2' / 'raw' / 'D3--waveforms--%05d.txt') % item
 
         if os.path.isfile(file_name1):
             if os.path.isfile(save_name1):
-                print('File #%s in rt_1 folder' % item)
+                print('File #%05d in rt_1 folder' % item)
             else:
                 t, v, hdr = rw(file_name1, nhdr)
                 ww(t, v, save_name1, hdr)
-                print('File #%s in rt_1 folder' % item)
+                print('File #%05d in rt_1 folder' % item)
 
         if os.path.isfile(file_name2):
             if os.path.isfile(save_name2):
-                print('File #%s in rt_2 folder' % item)
+                print('File #%05d in rt_2 folder' % item)
             else:
                 t, v, hdr = rw(file_name2, nhdr)
                 ww(t, v, save_name2, hdr)
-                print('File #%s in rt_2 folder' % item)
+                print('File #%05d in rt_2 folder' % item)
 
         if os.path.isfile(file_name4):
             if os.path.isfile(save_name4):
-                print('File #%s in rt_4 folder' % item)
+                print('File #%05d in rt_4 folder' % item)
             else:
                 t, v, hdr = rw(file_name4, nhdr)
                 ww(t, v, save_name4, hdr)
-                print('File #%s in rt_4 folder' % item)
+                print('File #%05d in rt_4 folder' % item)
 
         if os.path.isfile(file_name8):
             if os.path.isfile(save_name8):
-                print('File #%s in rt_8 folder' % item)
+                print('File #%05d in rt_8 folder' % item)
             else:
                 t, v, hdr = rw(file_name8, nhdr)
                 ww(t, v, save_name8, hdr)
-                print('File #%s in rt_8 folder' % item)
+                print('File #%05d in rt_8 folder' % item)
+
+        single_file_array_2 = np.append(single_file_array_2, item)
+
+    return single_file_array_2
 
 
 # Copies double spe waveforms with 1x, 2x, 4x, and 8x initial rise times to d3 folder
-def copy_d_waveforms(double_file_array, data_path, filt_path1, filt_path2, filt_path4, filt_path8, delay_folder, nhdr):
+def copy_d_waveforms(double_file_array, double_file_array_2, data_path, filt_path1, filt_path2, filt_path4, filt_path8,
+                     delay_folder, nhdr):
     for item in double_file_array:
         file_name1 = str(data_path / 'rt_1_double' / delay_folder / 'D2--waveforms--%s.txt') % item
         file_name2 = str(data_path / 'rt_2_double' / delay_folder / 'D2--waveforms--%s.txt') % item
@@ -439,6 +853,10 @@ def copy_d_waveforms(double_file_array, data_path, filt_path1, filt_path2, filt_
                 ww(t, v, save_name8, hdr)
                 print('File #%s in double_spe_8 folder' % item)
 
+        double_file_array_2 = np.append(double_file_array_2, item)
+
+    return double_file_array_2
+
 
 # Given a time array, voltage array, sample rate, and new sample rate, creates downsampled time and voltage arrays
 def downsample(t, v, fsps, fsps_new):
@@ -468,102 +886,102 @@ def down_dig(single_file_array, double_file_array, filt_path1, filt_path2, filt_
              delay_folder, fsps, fsps_new, noise, nhdr):
     for item in single_file_array:
         file_name1 = str(dest_path / 'rt_1_single' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         file_name2 = str(dest_path / 'rt_2_single' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         file_name4 = str(dest_path / 'rt_4_single' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         file_name8 = str(dest_path / 'rt_8_single' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         save_name1 = str(dest_path / 'rt_1_single_2' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         save_name2 = str(dest_path / 'rt_2_single_2' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         save_name4 = str(dest_path / 'rt_4_single_2' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         save_name8 = str(dest_path / 'rt_8_single_2' / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
 
         if os.path.isfile(file_name1):
             if os.path.isfile(save_name1):
-                print('File #%s downsampled' % item)
+                print('File #%05d downsampled' % item)
             else:
                 t, v, hdr = rw(file_name1, nhdr)
                 ww(t, v, save_name1, hdr)
-                print('File #%s downsampled' % item)
+                print('File #%05d downsampled' % item)
 
         if os.path.isfile(file_name2):
             if os.path.isfile(save_name2):
-                print('File #%s downsampled' % item)
+                print('File #%05d downsampled' % item)
             else:
                 t, v, hdr = rw(file_name2, nhdr)
                 ww(t, v, save_name2, hdr)
-                print('File #%s downsampled' % item)
+                print('File #%05d downsampled' % item)
 
         if os.path.isfile(file_name4):
             if os.path.isfile(save_name4):
-                print('File #%s downsampled' % item)
+                print('File #%05d downsampled' % item)
             else:
                 t, v, hdr = rw(file_name4, nhdr)
                 ww(t, v, save_name4, hdr)
-                print('File #%s downsampled' % item)
+                print('File #%05d downsampled' % item)
 
         if os.path.isfile(file_name8):
             if os.path.isfile(save_name8):
-                print('File #%s downsampled' % item)
+                print('File #%05d downsampled' % item)
             else:
                 t, v, hdr = rw(file_name8, nhdr)
                 ww(t, v, save_name8, hdr)
-                print('File #%s downsampled' % item)
+                print('File #%05d downsampled' % item)
 
         file_name1 = str(dest_path / 'rt_1_single' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         file_name2 = str(dest_path / 'rt_2_single' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         file_name4 = str(dest_path / 'rt_4_single' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         file_name8 = str(dest_path / 'rt_8_single' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         save_name1 = str(dest_path / 'rt_1_single_2' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         save_name2 = str(dest_path / 'rt_2_single_2' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         save_name4 = str(dest_path / 'rt_4_single_2' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
         save_name8 = str(dest_path / 'rt_8_single_2' / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                         'D3--waveforms--%s.txt') % item
+                         'D3--waveforms--%05d.txt') % item
 
         if os.path.isfile(file_name1):
             if os.path.isfile(save_name1):
-                print('File #%s digitized' % item)
+                print('File #%05d digitized' % item)
             else:
                 t, v, hdr = rw(file_name1, nhdr)
                 ww(t, v, save_name1, hdr)
-                print('File #%s digitized' % item)
+                print('File #%05d digitized' % item)
 
         if os.path.isfile(file_name2):
             if os.path.isfile(save_name2):
-                print('File #%s digitized' % item)
+                print('File #%05d digitized' % item)
             else:
                 t, v, hdr = rw(file_name2, nhdr)
                 ww(t, v, save_name2, hdr)
-                print('File #%s digitized' % item)
+                print('File #%05d digitized' % item)
 
         if os.path.isfile(file_name4):
             if os.path.isfile(save_name4):
-                print('File #%s digitized' % item)
+                print('File #%05d digitized' % item)
             else:
                 t, v, hdr = rw(file_name4, nhdr)
                 ww(t, v, save_name4, hdr)
-                print('File #%s digitized' % item)
+                print('File #%05d digitized' % item)
 
         if os.path.isfile(file_name8):
             if os.path.isfile(save_name8):
-                print('File #%s digitized' % item)
+                print('File #%05d digitized' % item)
             else:
                 t, v, hdr = rw(file_name8, nhdr)
                 ww(t, v, save_name8, hdr)
-                print('File #%s digitized' % item)
+                print('File #%05d digitized' % item)
 
     for item in double_file_array:
         file_name1 = str(filt_path1 / 'raw' / delay_folder / 'D3--waveforms--%s.txt') % item
@@ -635,3 +1053,255 @@ def down_dig(single_file_array, double_file_array, filt_path1, filt_path2, filt_
                     v_dig = digitize(v, noise)
                     ww(t, v_dig, dig_name8, hdr)
 
+
+# Checks if calculated values are possible or not
+def check_if_impossible(t1, t2, charge, amp, fwhm):
+    if t1 > 0 or t2 <= t1 or charge <= 0 or amp <= 0 or fwhm <= 0:
+        return 'impossible'
+    else:
+        return 'ok'
+
+
+# Creates empty arrays for calculations
+def initialize_arrays():
+
+    t1_array = np.array([])
+    t2_array = np.array([])
+    charge_array = np.array([])
+    amplitude_array = np.array([])
+    fwhm_array = np.array([])
+
+    return t1_array, t2_array, charge_array, amplitude_array, fwhm_array
+
+
+# Creates array for a calculation
+def append_arrays(t1, t2, charge, amplitude, fwhm, t1_array, t2_array, charge_array, amplitude_array, fwhm_array):
+
+    t1_array = np.append(t1_array, t1)
+    t2_array = np.append(t2_array, t2)
+    charge_array = np.append(charge_array, charge)
+    amplitude_array = np.append(amplitude_array, amplitude)
+    fwhm_array = np.append(fwhm_array, fwhm)
+
+    return t1_array, t2_array, charge_array, amplitude_array, fwhm_array
+
+
+# Removes single spe waveform from all spe folders
+def remove_spe_s(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_8_path_dig, rt_1_path_dow,
+                 rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, shaping):
+    t, v, hdr = rw(str(Path(rt_1_path_raw) / 'D3--waveforms--%05d.txt') % number, nhdr)
+    ww(t, v, str(dest_path / 'unusable_data' / 'D3--waveforms--%05d.txt') % number, hdr)
+    if os.path.isfile(str(Path(rt_1_path_dig) / 'D3--waveforms--%05d.txt') % number):
+        os.remove(str(Path(rt_1_path_dig) / 'D3--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(Path(rt_2_path_dig) / 'D3--waveforms--%05d.txt') % number):
+        os.remove(str(Path(rt_2_path_dig) / 'D3--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(Path(rt_4_path_dig) / 'D3--waveforms--%05d.txt') % number):
+        os.remove(str(Path(rt_4_path_dig) / 'D3--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(Path(rt_8_path_dig) / 'D3--waveforms--%05d.txt') % number):
+        os.remove(str(Path(rt_8_path_dig) / 'D3--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(Path(rt_1_path_dig) / 'D3--waveforms--%05d.txt') % number):
+        os.remove(str(Path(rt_1_path_dow) / 'D3--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(Path(rt_2_path_dow) / 'D3--waveforms--%05d.txt') % number):
+        os.remove(str(Path(rt_2_path_dow) / 'D3--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(Path(rt_4_path_dow) / 'D3--waveforms--%05d.txt') % number):
+        os.remove(str(Path(rt_4_path_dow) / 'D3--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(Path(rt_8_path_dow) / 'D3--waveforms--%05d.txt') % number):
+        os.remove(str(Path(rt_8_path_dow) / 'D3--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(Path(dest_path) / 'calculations_single' / shaping / 'D3--waveforms--%05d.txt') % number):
+        os.remove(str(Path(dest_path) / 'calculations_single' / shaping / 'D3--waveforms--%05d.txt') % number)
+
+
+# Removes double spe waveform from all spe folders
+def remove_spe_d(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_8_path_dig, rt_1_path_dow,
+                 rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, delay_folder, shaping):
+    t, v, hdr = rw(str(Path(rt_1_path_raw) / 'D3--waveforms--%s.txt') % number, nhdr)
+    ww(t, v, str(Path(dest_path) / 'unusable_data' / 'D3--waveforms--%s.txt') % number, hdr)
+    if os.path.isfile(str(Path(rt_1_path_dig) / 'D3--waveforms--%s.txt') % number):
+        os.remove(str(Path(rt_1_path_dig) / 'D3--waveforms--%s.txt') % number)
+    if os.path.isfile(str(Path(rt_2_path_dig) / 'D3--waveforms--%s.txt') % number):
+        os.remove(str(Path(rt_2_path_dig) / 'D3--waveforms--%s.txt') % number)
+    if os.path.isfile(str(Path(rt_4_path_dig) / 'D3--waveforms--%s.txt') % number):
+        os.remove(str(Path(rt_4_path_dig) / 'D3--waveforms--%s.txt') % number)
+    if os.path.isfile(str(Path(rt_8_path_dig) / 'D3--waveforms--%s.txt') % number):
+        os.remove(str(Path(rt_8_path_dig) / 'D3--waveforms--%s.txt') % number)
+    if os.path.isfile(str(Path(rt_1_path_dig) / 'D3--waveforms--%s.txt') % number):
+        os.remove(str(Path(rt_1_path_dow) / 'D3--waveforms--%s.txt') % number)
+    if os.path.isfile(str(Path(rt_2_path_dow) / 'D3--waveforms--%s.txt') % number):
+        os.remove(str(Path(rt_2_path_dow) / 'D3--waveforms--%s.txt') % number)
+    if os.path.isfile(str(Path(rt_4_path_dow) / 'D3--waveforms--%s.txt') % number):
+        os.remove(str(Path(rt_4_path_dow) / 'D3--waveforms--%s.txt') % number)
+    if os.path.isfile(str(Path(rt_8_path_dow) / 'D3--waveforms--%s.txt') % number):
+        os.remove(str(Path(rt_8_path_dow) / 'D3--waveforms--%s.txt') % number)
+    if os.path.isfile(str(Path(dest_path) / 'calculations_double' / delay_folder / shaping / 'D3--waveforms--%s.txt')
+                      % number):
+        os.remove(str(Path(dest_path) / 'calculations_double' / delay_folder / shaping / 'D3--waveforms--%s.txt') %
+                  number)
+
+
+# Calculates beginning & end times of spe waveform, charge, amplitude, fwhm, 10-90 & 20-80 rise times, 10-90 & 20-80
+# fall times, and 10%, 20%, 80% & 90% jitter
+def calculations(t, v, r):
+    charge = calculate_charge(t, v, r)
+    t1, t2 = calculate_t1_t2(t, v)
+    amp = calculate_amp(t, v)
+    fwhm = calculate_fwhm(t, v)
+
+    return t1, t2, charge, amp, fwhm
+
+
+# Reads calculations from an existing file and checks if they are possible values
+def read_calculations(filename):
+    t1, t2, charge, amplitude, fwhm = read_calc(filename)
+    possibility = check_if_impossible(t1, t2, charge, amplitude, fwhm)
+
+    return t1, t2, charge, amplitude, fwhm, possibility
+
+
+# Removes spe file if values are impossible, appends values to arrays if not, and creates calculations file if it does
+# not already exist
+def create_arrays_s(calc_file, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_path, number, t1_array, t2_array,
+                    charge_array, amplitude_array, fwhm_array, t1, t2, charge, amplitude, fwhm, possibility, nhdr,
+                    fsps_new, shaping):
+    rt_1_path_raw = str(rt_1_path / 'raw' / 'D3--waveforms--%05d.txt') % number
+    rt_1_path_dow = str(rt_1_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                        'D3--waveforms--%05d.txt') % number
+    rt_1_path_dig = str(rt_1_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / 'D3--waveforms--%05d.txt')\
+                    % number
+    rt_2_path_dow = str(rt_2_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                        'D3--waveforms--%05d.txt') % number
+    rt_2_path_dig = str(rt_2_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / 'D3--waveforms--%05d.txt')\
+                    % number
+    rt_4_path_dow = str(rt_4_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                        'D3--waveforms--%05d.txt') % number
+    rt_4_path_dig = str(rt_4_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / 'D3--waveforms--%05d.txt')\
+                    % number
+    rt_8_path_dow = str(rt_8_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
+                        'D3--waveforms--%05d.txt') % number
+    rt_8_path_dig = str(rt_8_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / 'D3--waveforms--%05d.txt')\
+                    % number
+
+    # Any spe waveform that returns impossible values is put into the not_spe folder
+    if possibility == 'impossible':
+        print('Removing file #%05d' % number)
+        remove_spe_s(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_8_path_dig, rt_1_path_dow,
+                     rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, shaping)
+
+    # All other spe waveforms' calculations are placed into arrays
+    else:
+        t1_array, t2_array, charge_array, amplitude_array, fwhm_array = \
+            append_arrays(t1, t2, charge, amplitude, fwhm, t1_array, t2_array, charge_array, amplitude_array,
+                          fwhm_array)
+        if not os.path.isfile(calc_file):
+            save_calculations_s(dest_path, number, t1, t2, charge, amplitude, fwhm, shaping)
+
+    return t1_array, t2_array, charge_array, amplitude_array, fwhm_array
+
+
+# Removes spe file if values are impossible, appends values to arrays if not, and creates calculations file if it does
+# not already exist
+def create_arrays_d(calc_file, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_path, number, t1_array, t2_array,
+                    charge_array, amplitude_array, fwhm_array, t1, t2, charge, amplitude, fwhm, possibility, nhdr,
+                    fsps_new, delay_folder, shaping):
+    rt_1_path_raw = str(rt_1_path / 'raw' / delay_folder / 'D3--waveforms--%s.txt') % number
+    rt_1_path_dow = str(rt_1_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                        'D3--waveforms--%s.txt') % number
+    rt_1_path_dig = str(rt_1_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                        'D3--waveforms--%s.txt') % number
+    rt_2_path_dow = str(rt_2_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                        'D3--waveforms--%s.txt') % number
+    rt_2_path_dig = str(rt_2_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                        'D3--waveforms--%s.txt') % number
+    rt_4_path_dow = str(rt_4_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                        'D3--waveforms--%s.txt') % number
+    rt_4_path_dig = str(rt_4_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                        'D3--waveforms--%s.txt') % number
+    rt_8_path_dow = str(rt_8_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                        'D3--waveforms--%s.txt') % number
+    rt_8_path_dig = str(rt_8_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                        'D3--waveforms--%s.txt') % number
+
+    # Any spe waveform that returns impossible values is put into the not_spe folder
+    if possibility == 'impossible':
+        print('Removing file #%s' % number)
+        remove_spe_d(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_8_path_dig, rt_1_path_dow,
+                     rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, delay_folder, shaping)
+
+    # All other spe waveforms' calculations are placed into arrays
+    else:
+        t1_array, t2_array, charge_array, amplitude_array, fwhm_array = \
+            append_arrays(t1, t2, charge, amplitude, fwhm, t1_array, t2_array, charge_array, amplitude_array,
+                          fwhm_array)
+        if not os.path.isfile(calc_file):
+            save_calculations_d(dest_path, delay_folder, number, t1, t2, charge, amplitude, fwhm, shaping)
+
+    return t1_array, t2_array, charge_array, amplitude_array, fwhm_array
+
+
+# Calculates beginning & end times of spe waveform, charge, amplitude, and fwhm for each single spe file
+# Returns arrays of beginning & end times of spe waveform, charge, amplitude, and fwhm
+def make_arrays_s(save_shift, dest_path, array, nhdr, r, fsps_new, shaping):
+    t1_array, t2_array, charge_array, amplitude_array, fwhm_array = initialize_arrays()
+
+    for item in array:
+        file_name1 = str(save_shift / 'D3--waveforms--%05d.txt') % item
+        file_name2 = str(dest_path / 'calculations_single' / shaping / 'D3--waveforms--%05d.txt') % item
+
+        if os.path.isfile(file_name1) and not os.path.isfile(str(dest_path / 'unusable_data' /
+                                                                 'D3--waveforms--%05d.txt') % item):
+            # If the calculations were done previously, they are read from a file
+            if os.path.isfile(file_name2):
+                print("Reading calculations from file #%05d" % item)
+                t1, t2, charge, amplitude, fwhm, possibility = read_calculations(file_name2)
+            # If the calculations were not done yet, they are calculated
+            else:
+                print("Calculating file #%05d" % item)
+                t, v, hdr = rw(file_name1, nhdr)                            # Shifted waveform file is read
+                t1, t2, charge, amplitude, fwhm = calculations(t, v, r)     # Calculations are done
+                possibility = check_if_impossible(t1, t2, charge, amplitude, fwhm)
+
+            rt_1_path = Path(dest_path / 'rt_1_single_2')
+            rt_2_path = Path(dest_path / 'rt_2_single_2')
+            rt_4_path = Path(dest_path / 'rt_4_single_2')
+            rt_8_path = Path(dest_path / 'rt_8_single_2')
+
+            t1_array, t2_array, charge_array, amplitude_array, fwhm_array = \
+                create_arrays_s(file_name2, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_path, item, t1_array,
+                                t2_array, charge_array, amplitude_array, fwhm_array, t1, t2, charge, amplitude, fwhm,
+                                possibility, nhdr, fsps_new, shaping)
+
+    return t1_array, t2_array, charge_array, amplitude_array, fwhm_array
+
+
+# Calculates beginning & end times of spe waveform, charge, amplitude, and fwhm for each double spe file
+# Returns arrays of beginning & end times of spe waveform, charge, amplitude, and fwhm
+def make_arrays_d(save_shift, dest_path, delay_folder, array, nhdr, r, fsps_new, shaping):
+    t1_array, t2_array, charge_array, amplitude_array, fwhm_array = initialize_arrays()
+
+    for item in array:
+        file_name1 = str(save_shift / 'D3--waveforms--%s.txt') % item
+        file_name2 = str(dest_path / 'calculations_double' / delay_folder / shaping / 'D3--waveforms--%s.txt') % item
+
+        if os.path.isfile(file_name1) and not os.path.isfile(str(dest_path / 'unusable_data' /
+                                                                 'D3--waveforms--%s.txt') % item):
+            # If the calculations were done previously, they are read from a file
+            if os.path.isfile(file_name2):
+                print("Reading calculations from file #%s" % item)
+                t1, t2, charge, amplitude, fwhm, possibility = read_calculations(file_name2)
+            # If the calculations were not done yet, they are calculated
+            else:
+                print("Calculating file #%s" % item)
+                t, v, hdr = rw(file_name1, nhdr)        # Shifted waveform file is read
+                t1, t2, charge, amplitude, fwhm = calculations(t, v, r)             # Calculations are done
+                possibility = check_if_impossible(t1, t2, charge, amplitude, fwhm)
+
+            rt_1_path = Path(dest_path / 'rt_1_double')
+            rt_2_path = Path(dest_path / 'rt_2_double')
+            rt_4_path = Path(dest_path / 'rt_4_double')
+            rt_8_path = Path(dest_path / 'rt_8_double')
+
+            t1_array, t2_array, charge_array, amplitude_array, fwhm_array = \
+                create_arrays_d(file_name2, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_path, item, t1_array,
+                                t2_array, charge_array, amplitude_array, fwhm_array, t1, t2, charge, amplitude, fwhm,
+                                possibility, nhdr, fsps_new, delay_folder, shaping)
+
+    return t1_array, t2_array, charge_array, amplitude_array, fwhm_array
