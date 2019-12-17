@@ -2,6 +2,7 @@ import os
 import csv
 import datetime
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 from pathlib import Path
 from scipy.optimize import curve_fit
@@ -50,7 +51,7 @@ def ww(x, y, file_name, hdr):
 
 # Creates text file with time of beginning of spe, time of end of spe, charge, amplitude, and fwhm for a single spe file
 def save_calculations_s(dest_path, item, t1, t2, charge, amplitude, fwhm, shaping):
-    file_name = str(dest_path / 'calculations_single' / shaping / 'D3--waveforms--%s.txt') % item
+    file_name = str(dest_path / 'calculations_single' / shaping / 'D3--waveforms--%05d.txt') % item
     myfile = open(file_name, 'w')
     myfile.write('t1,' + str(t1))
     myfile.write('\nt2,' + str(t2))
@@ -161,6 +162,19 @@ def write_hist_data_d(array, dest_path, name):
     myfile.close()
 
 
+def read_hist_file(filename, fsps_new):
+    array = np.array([])
+
+    myfile = open(filename, 'r')                # Opens file
+    for line in myfile:                         # Reads values & saves in an array
+        line = line.strip()
+        line = float(line)
+        array = np.append(array, line)          # Closes histogram file
+    myfile.close()
+
+    return array
+
+
 # HISTOGRAMS
 
 
@@ -179,7 +193,7 @@ def gauss_fit(array, bins, n):
     bins_range1 = np.linspace(range_min1, range_max1, 10000)    # Creates array of bins between upper & lower limits
     n_range1 = np.interp(bins_range1, bins, n)              # Interpolates & creates array of y axis values
     guess1 = [1, float(b_est), float(c_est)]                # Defines guess for values of a, b & c in Gaussian fit
-    popt1, pcov1 = curve_fit(func, bins_range1, n_range1, p0=guess1, maxfev=10000)      # Finds Gaussian fit
+    popt1, pcov1 = curve_fit(func, bins_range1, n_range1, p0=guess1, maxfev=100000)      # Finds Gaussian fit
     mu1 = float(format(popt1[1], '.2e'))                        # Calculates mean based on 1sigma guess
     sigma1 = np.abs(float(format(popt1[2], '.2e')))     # Calculates standard deviation based on 1sigma estimation
     range_min2 = mu1 - 2 * sigma1                       # Calculates lower limit of Gaussian fit (2sigma)
@@ -187,7 +201,7 @@ def gauss_fit(array, bins, n):
     bins_range2 = np.linspace(range_min2, range_max2, 10000)    # Creates array of bins between upper & lower limits
     n_range2 = np.interp(bins_range2, bins, n)          # Interpolates & creates array of y axis values
     guess2 = [1, mu1, sigma1]                           # Defines guess for values of a, b & c in Gaussian fit
-    popt2, pcov2 = curve_fit(func, bins_range2, n_range2, p0=guess2, maxfev=10000)      # Finds Gaussian fit
+    popt2, pcov2 = curve_fit(func, bins_range2, n_range2, p0=guess2, maxfev=100000)      # Finds Gaussian fit
 
     return bins_range2, popt2, pcov2
 
@@ -313,13 +327,13 @@ def p3_hist(dest_path, delay_folder, charge_array_s_1, charge_array_s_2, charge_
         make_hist(charge_array_d_8, amplitude_array_d_8, fwhm_array_d_8, dest_path, 75, str(int(fsps_new / 1e6)) +
                   '_Msps_rt_8_double_' + delay_folder, 'double')
     make_double_hist(charge_array_s_1, amplitude_array_s_1, fwhm_array_s_1, charge_array_d_1, amplitude_array_d_1,
-                     fwhm_array_d_1, dest_path, 75, str(int(fsps_new / 1e6)) + '_Msps_rt_1' + delay_folder)
+                     fwhm_array_d_1, dest_path, 75, str(int(fsps_new / 1e6)) + '_Msps_rt_1_' + delay_folder)
     make_double_hist(charge_array_s_2, amplitude_array_s_2, fwhm_array_s_2, charge_array_d_2, amplitude_array_d_2,
-                     fwhm_array_d_2, dest_path, 75, str(int(fsps_new / 1e6)) + '_Msps_rt_2' + delay_folder)
+                     fwhm_array_d_2, dest_path, 75, str(int(fsps_new / 1e6)) + '_Msps_rt_2_' + delay_folder)
     make_double_hist(charge_array_s_4, amplitude_array_s_4, fwhm_array_s_4, charge_array_d_4, amplitude_array_d_4,
-                     fwhm_array_d_4, dest_path, 75, str(int(fsps_new / 1e6)) + '_Msps_rt_4' + delay_folder)
+                     fwhm_array_d_4, dest_path, 75, str(int(fsps_new / 1e6)) + '_Msps_rt_4_' + delay_folder)
     make_double_hist(charge_array_s_8, amplitude_array_s_8, fwhm_array_s_8, charge_array_d_8, amplitude_array_d_8,
-                     fwhm_array_d_8, dest_path, 75, str(int(fsps_new / 1e6)) + '_Msps_rt_8' + delay_folder)
+                     fwhm_array_d_8, dest_path, 75, str(int(fsps_new / 1e6)) + '_Msps_rt_8_' + delay_folder)
 
     return mean_charge_s_1, mean_amp_s_1, mean_fwhm_s_1, mean_charge_s_2, mean_amp_s_2, mean_fwhm_s_2, mean_charge_s_4, \
            mean_amp_s_4, mean_fwhm_s_4, mean_charge_s_8, mean_amp_s_8, mean_fwhm_s_8, mean_charge_d_1, mean_amp_d_1, \
@@ -515,7 +529,7 @@ def calculate_fwhm(t, v):
     return half_max_time
 
 
-# P3
+# P3_DOUBLE_STUDIES
 
 
 # Creates p3 double folder names
@@ -1056,7 +1070,8 @@ def down_dig(single_file_array, double_file_array, filt_path1, filt_path2, filt_
 
 # Checks if calculated values are possible or not
 def check_if_impossible(t1, t2, charge, amp, fwhm):
-    if t1 > 0 or t2 <= t1 or charge <= 0 or amp <= 0 or fwhm <= 0:
+    if (t2 <= t1 or charge <= 0 or amp <= 0 or fwhm <= 0 or charge == np.inf or charge == np.nan or
+            amp == np.inf or amp == np.nan or fwhm == np.inf or fwhm == np.nan):
         return 'impossible'
     else:
         return 'ok'
@@ -1099,7 +1114,7 @@ def remove_spe_s(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_
         os.remove(str(Path(rt_4_path_dig) / 'D3--waveforms--%05d.txt') % number)
     if os.path.isfile(str(Path(rt_8_path_dig) / 'D3--waveforms--%05d.txt') % number):
         os.remove(str(Path(rt_8_path_dig) / 'D3--waveforms--%05d.txt') % number)
-    if os.path.isfile(str(Path(rt_1_path_dig) / 'D3--waveforms--%05d.txt') % number):
+    if os.path.isfile(str(Path(rt_1_path_dow) / 'D3--waveforms--%05d.txt') % number):
         os.remove(str(Path(rt_1_path_dow) / 'D3--waveforms--%05d.txt') % number)
     if os.path.isfile(str(Path(rt_2_path_dow) / 'D3--waveforms--%05d.txt') % number):
         os.remove(str(Path(rt_2_path_dow) / 'D3--waveforms--%05d.txt') % number)
@@ -1124,7 +1139,7 @@ def remove_spe_d(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_
         os.remove(str(Path(rt_4_path_dig) / 'D3--waveforms--%s.txt') % number)
     if os.path.isfile(str(Path(rt_8_path_dig) / 'D3--waveforms--%s.txt') % number):
         os.remove(str(Path(rt_8_path_dig) / 'D3--waveforms--%s.txt') % number)
-    if os.path.isfile(str(Path(rt_1_path_dig) / 'D3--waveforms--%s.txt') % number):
+    if os.path.isfile(str(Path(rt_1_path_dow) / 'D3--waveforms--%s.txt') % number):
         os.remove(str(Path(rt_1_path_dow) / 'D3--waveforms--%s.txt') % number)
     if os.path.isfile(str(Path(rt_2_path_dow) / 'D3--waveforms--%s.txt') % number):
         os.remove(str(Path(rt_2_path_dow) / 'D3--waveforms--%s.txt') % number)
@@ -1162,23 +1177,15 @@ def read_calculations(filename):
 def create_arrays_s(calc_file, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_path, number, t1_array, t2_array,
                     charge_array, amplitude_array, fwhm_array, t1, t2, charge, amplitude, fwhm, possibility, nhdr,
                     fsps_new, shaping):
-    rt_1_path_raw = str(rt_1_path / 'raw' / 'D3--waveforms--%05d.txt') % number
-    rt_1_path_dow = str(rt_1_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                        'D3--waveforms--%05d.txt') % number
-    rt_1_path_dig = str(rt_1_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / 'D3--waveforms--%05d.txt')\
-                    % number
-    rt_2_path_dow = str(rt_2_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                        'D3--waveforms--%05d.txt') % number
-    rt_2_path_dig = str(rt_2_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / 'D3--waveforms--%05d.txt')\
-                    % number
-    rt_4_path_dow = str(rt_4_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                        'D3--waveforms--%05d.txt') % number
-    rt_4_path_dig = str(rt_4_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / 'D3--waveforms--%05d.txt')\
-                    % number
-    rt_8_path_dow = str(rt_8_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') /
-                        'D3--waveforms--%05d.txt') % number
-    rt_8_path_dig = str(rt_8_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / 'D3--waveforms--%05d.txt')\
-                    % number
+    rt_1_path_raw = str(rt_1_path / 'raw')
+    rt_1_path_dow = str(rt_1_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps'))
+    rt_1_path_dig = str(rt_1_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps'))
+    rt_2_path_dow = str(rt_2_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps'))
+    rt_2_path_dig = str(rt_2_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps'))
+    rt_4_path_dow = str(rt_4_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps'))
+    rt_4_path_dig = str(rt_4_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps'))
+    rt_8_path_dow = str(rt_8_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps'))
+    rt_8_path_dig = str(rt_8_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps'))
 
     # Any spe waveform that returns impossible values is put into the not_spe folder
     if possibility == 'impossible':
@@ -1202,23 +1209,15 @@ def create_arrays_s(calc_file, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_
 def create_arrays_d(calc_file, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_path, number, t1_array, t2_array,
                     charge_array, amplitude_array, fwhm_array, t1, t2, charge, amplitude, fwhm, possibility, nhdr,
                     fsps_new, delay_folder, shaping):
-    rt_1_path_raw = str(rt_1_path / 'raw' / delay_folder / 'D3--waveforms--%s.txt') % number
-    rt_1_path_dow = str(rt_1_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
-                        'D3--waveforms--%s.txt') % number
-    rt_1_path_dig = str(rt_1_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
-                        'D3--waveforms--%s.txt') % number
-    rt_2_path_dow = str(rt_2_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
-                        'D3--waveforms--%s.txt') % number
-    rt_2_path_dig = str(rt_2_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
-                        'D3--waveforms--%s.txt') % number
-    rt_4_path_dow = str(rt_4_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
-                        'D3--waveforms--%s.txt') % number
-    rt_4_path_dig = str(rt_4_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
-                        'D3--waveforms--%s.txt') % number
-    rt_8_path_dow = str(rt_8_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
-                        'D3--waveforms--%s.txt') % number
-    rt_8_path_dig = str(rt_8_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
-                        'D3--waveforms--%s.txt') % number
+    rt_1_path_raw = str(rt_1_path / 'raw' / delay_folder)
+    rt_1_path_dow = str(rt_1_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder)
+    rt_1_path_dig = str(rt_1_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder)
+    rt_2_path_dow = str(rt_2_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder)
+    rt_2_path_dig = str(rt_2_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder)
+    rt_4_path_dow = str(rt_4_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder)
+    rt_4_path_dig = str(rt_4_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder)
+    rt_8_path_dow = str(rt_8_path / str('downsampled_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder)
+    rt_8_path_dig = str(rt_8_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder)
 
     # Any spe waveform that returns impossible values is put into the not_spe folder
     if possibility == 'impossible':
@@ -1246,8 +1245,9 @@ def make_arrays_s(save_shift, dest_path, array, nhdr, r, fsps_new, shaping):
         file_name1 = str(save_shift / 'D3--waveforms--%05d.txt') % item
         file_name2 = str(dest_path / 'calculations_single' / shaping / 'D3--waveforms--%05d.txt') % item
 
-        if os.path.isfile(file_name1) and not os.path.isfile(str(dest_path / 'unusable_data' /
-                                                                 'D3--waveforms--%05d.txt') % item):
+        ''' and not os.path.isfile(str(dest_path / 'unusable_data' /
+                                                                 'D3--waveforms--%05d.txt') % item)'''
+        if os.path.isfile(file_name1):
             # If the calculations were done previously, they are read from a file
             if os.path.isfile(file_name2):
                 print("Reading calculations from file #%05d" % item)
@@ -1281,8 +1281,9 @@ def make_arrays_d(save_shift, dest_path, delay_folder, array, nhdr, r, fsps_new,
         file_name1 = str(save_shift / 'D3--waveforms--%s.txt') % item
         file_name2 = str(dest_path / 'calculations_double' / delay_folder / shaping / 'D3--waveforms--%s.txt') % item
 
-        if os.path.isfile(file_name1) and not os.path.isfile(str(dest_path / 'unusable_data' /
-                                                                 'D3--waveforms--%s.txt') % item):
+        ''' and not os.path.isfile(str(dest_path / 'unusable_data' /
+                                                                 'D3--waveforms--%s.txt') % item)'''
+        if os.path.isfile(file_name1):
             # If the calculations were done previously, they are read from a file
             if os.path.isfile(file_name2):
                 print("Reading calculations from file #%s" % item)
@@ -1305,3 +1306,536 @@ def make_arrays_d(save_shift, dest_path, delay_folder, array, nhdr, r, fsps_new,
                                 possibility, nhdr, fsps_new, delay_folder, shaping)
 
     return t1_array, t2_array, charge_array, amplitude_array, fwhm_array
+
+
+# P3_DOUBLE_STUDIES_2
+
+
+# Creates p3 double folder names
+def initialize_folders2(date, filter_band):
+    gen_path = Path(r'/Volumes/TOSHIBA EXT/data/watchman')
+    save_path = Path(str(gen_path / '%08d_watchman_spe/waveforms/%s') % (date, filter_band))
+    dest_path = Path(save_path / 'd3')
+    hist_single = Path(dest_path / 'hist_data_single')
+    hist_double = Path(dest_path / 'hist_data_double')
+
+    return gen_path, save_path, dest_path, hist_single, hist_double
+
+
+# Creates p3 double histogram file names
+def initialize_names(hist_single, hist_double, shaping, fsps_new):
+    amp_sing = Path(hist_single / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping + '_single.txt'))
+    charge_sing = Path(hist_single / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping + '_single.txt'))
+    fwhm_sing = Path(hist_single / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping + '_single.txt'))
+
+    amp_doub_no_delay = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                               '_double_no_delay.txt'))
+    amp_doub_05rt = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_0.5x_rt.txt'))
+    amp_doub_1rt = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                          '_double_1x_rt.txt'))
+    amp_doub_15rt = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_1.5x_rt.txt'))
+    amp_doub_2rt = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                          '_double_2x_rt.txt'))
+    amp_doub_25rt = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_2.5x_rt.txt'))
+    amp_doub_3rt = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                          '_double_3x_rt.txt'))
+    amp_doub_35rt = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_3.5x_rt.txt'))
+    amp_doub_4rt = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                          '_double_4x_rt.txt'))
+    amp_doub_45rt = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_4.5x_rt.txt'))
+    amp_doub_5rt = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                          '_double_5x_rt.txt'))
+    amp_doub_55rt = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_5.5x_rt.txt'))
+    amp_doub_6rt = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                          '_double_6x_rt.txt'))
+    amp_doub_40ns = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_40_ns.txt'))
+    amp_doub_80ns = Path(hist_double / str('amplitude_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_80_ns.txt'))
+
+    charge_doub_no_delay = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                                  '_double_no_delay.txt'))
+    charge_doub_05rt = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                              '_double_0.5x_rt.txt'))
+    charge_doub_1rt = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                             '_double_1x_rt.txt'))
+    charge_doub_15rt = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                              '_double_1.5x_rt.txt'))
+    charge_doub_2rt = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                             '_double_2x_rt.txt'))
+    charge_doub_25rt = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                              '_double_2.5x_rt.txt'))
+    charge_doub_3rt = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                             '_double_3x_rt.txt'))
+    charge_doub_35rt = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                              '_double_3.5x_rt.txt'))
+    charge_doub_4rt = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                             '_double_4x_rt.txt'))
+    charge_doub_45rt = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                              '_double_4.5x_rt.txt'))
+    charge_doub_5rt = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                             '_double_5x_rt.txt'))
+    charge_doub_55rt = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                              '_double_5.5x_rt.txt'))
+    charge_doub_6rt = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                             '_double_6x_rt.txt'))
+    charge_doub_40ns = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                              '_double_40_ns.txt'))
+    charge_doub_80ns = Path(hist_double / str('charge_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                              '_double_80_ns.txt'))
+
+    fwhm_doub_no_delay = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                                '_double_no_delay.txt'))
+    fwhm_doub_05rt = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                            '_double_0.5x_rt.txt'))
+    fwhm_doub_1rt = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_1x_rt.txt'))
+    fwhm_doub_15rt = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                            '_double_1.5x_rt.txt'))
+    fwhm_doub_2rt = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_2x_rt.txt'))
+    fwhm_doub_25rt = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                            '_double_2.5x_rt.txt'))
+    fwhm_doub_3rt = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_3x_rt.txt'))
+    fwhm_doub_35rt = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                            '_double_3.5x_rt.txt'))
+    fwhm_doub_4rt = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_4x_rt.txt'))
+    fwhm_doub_45rt = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                            '_double_4.5x_rt.txt'))
+    fwhm_doub_5rt = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_5x_rt.txt'))
+    fwhm_doub_55rt = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                            '_double_5.5x_rt.txt'))
+    fwhm_doub_6rt = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                           '_double_6x_rt.txt'))
+    fwhm_doub_40ns = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                            '_double_40_ns.txt'))
+    fwhm_doub_80ns = Path(hist_double / str('fwhm_' + str(int(fsps_new / 1e6)) + '_Msps_' + shaping +
+                                            '_double_80_ns.txt'))
+
+    return amp_sing, charge_sing, fwhm_sing, amp_doub_no_delay, amp_doub_05rt, amp_doub_1rt, amp_doub_15rt, \
+           amp_doub_2rt, amp_doub_25rt, amp_doub_3rt, amp_doub_35rt, amp_doub_4rt, amp_doub_45rt, amp_doub_5rt, \
+           amp_doub_55rt, amp_doub_6rt, amp_doub_40ns, amp_doub_80ns, charge_doub_no_delay, charge_doub_05rt, \
+           charge_doub_1rt, charge_doub_15rt, charge_doub_2rt, charge_doub_25rt, charge_doub_3rt, charge_doub_35rt, \
+           charge_doub_4rt, charge_doub_45rt, charge_doub_5rt, charge_doub_55rt, charge_doub_6rt, charge_doub_40ns, \
+           charge_doub_80ns, fwhm_doub_no_delay, fwhm_doub_05rt, fwhm_doub_1rt, fwhm_doub_15rt, fwhm_doub_2rt, \
+           fwhm_doub_25rt, fwhm_doub_3rt, fwhm_doub_35rt, fwhm_doub_4rt, fwhm_doub_45rt, fwhm_doub_5rt, fwhm_doub_55rt,\
+           fwhm_doub_6rt, fwhm_doub_40ns, fwhm_doub_80ns
+
+
+# Creates arrays of data in histogram files and calculates mean and SD
+def hist_data(amp_sing, charge_sing, fwhm_sing, amp_doub_no_delay, amp_doub_05rt, amp_doub_1rt, amp_doub_15rt,
+                amp_doub_2rt, amp_doub_25rt, amp_doub_3rt, amp_doub_35rt, amp_doub_4rt, amp_doub_45rt, amp_doub_5rt,
+                amp_doub_55rt, amp_doub_6rt, amp_doub_40ns, amp_doub_80ns, charge_doub_no_delay, charge_doub_05rt,
+                charge_doub_1rt, charge_doub_15rt, charge_doub_2rt, charge_doub_25rt, charge_doub_3rt, charge_doub_35rt,
+                charge_doub_4rt, charge_doub_45rt, charge_doub_5rt, charge_doub_55rt, charge_doub_6rt, charge_doub_40ns,
+                charge_doub_80ns, fwhm_doub_no_delay, fwhm_doub_05rt, fwhm_doub_1rt, fwhm_doub_15rt, fwhm_doub_2rt,
+                fwhm_doub_25rt, fwhm_doub_3rt, fwhm_doub_35rt, fwhm_doub_4rt, fwhm_doub_45rt, fwhm_doub_5rt,
+                fwhm_doub_55rt, fwhm_doub_6rt, fwhm_doub_40ns, fwhm_doub_80ns, fsps_new):
+    amp_sing_array = read_hist_file(amp_sing, fsps_new)
+    charge_sing_array = read_hist_file(charge_sing, fsps_new)
+    fwhm_sing_array = read_hist_file(fwhm_sing, fsps_new)
+    amp_doub_no_delay_array = read_hist_file(amp_doub_no_delay, fsps_new)
+    amp_doub_05rt_array = read_hist_file(amp_doub_05rt, fsps_new)
+    amp_doub_1rt_array = read_hist_file(amp_doub_1rt, fsps_new)
+    amp_doub_15rt_array = read_hist_file(amp_doub_15rt, fsps_new)
+    amp_doub_2rt_array = read_hist_file(amp_doub_2rt, fsps_new)
+    amp_doub_25rt_array = read_hist_file(amp_doub_25rt, fsps_new)
+    amp_doub_3rt_array = read_hist_file(amp_doub_3rt, fsps_new)
+    amp_doub_35rt_array = read_hist_file(amp_doub_35rt, fsps_new)
+    amp_doub_4rt_array = read_hist_file(amp_doub_4rt, fsps_new)
+    amp_doub_45rt_array = read_hist_file(amp_doub_45rt, fsps_new)
+    amp_doub_5rt_array = read_hist_file(amp_doub_5rt, fsps_new)
+    amp_doub_55rt_array = read_hist_file(amp_doub_55rt, fsps_new)
+    amp_doub_6rt_array = read_hist_file(amp_doub_6rt, fsps_new)
+    amp_doub_40ns_array = read_hist_file(amp_doub_40ns, fsps_new)
+    amp_doub_80ns_array = read_hist_file(amp_doub_80ns, fsps_new)
+    charge_doub_no_delay_array = read_hist_file(charge_doub_no_delay, fsps_new)
+    charge_doub_05rt_array = read_hist_file(charge_doub_05rt, fsps_new)
+    charge_doub_1rt_array = read_hist_file(charge_doub_1rt, fsps_new)
+    charge_doub_15rt_array = read_hist_file(charge_doub_15rt, fsps_new)
+    charge_doub_2rt_array = read_hist_file(charge_doub_2rt, fsps_new)
+    charge_doub_25rt_array = read_hist_file(charge_doub_25rt, fsps_new)
+    charge_doub_3rt_array = read_hist_file(charge_doub_3rt, fsps_new)
+    charge_doub_35rt_array = read_hist_file(charge_doub_35rt, fsps_new)
+    charge_doub_4rt_array = read_hist_file(charge_doub_4rt, fsps_new)
+    charge_doub_45rt_array = read_hist_file(charge_doub_45rt, fsps_new)
+    charge_doub_5rt_array = read_hist_file(charge_doub_5rt, fsps_new)
+    charge_doub_55rt_array = read_hist_file(charge_doub_55rt, fsps_new)
+    charge_doub_6rt_array = read_hist_file(charge_doub_6rt, fsps_new)
+    charge_doub_40ns_array = read_hist_file(charge_doub_40ns, fsps_new)
+    charge_doub_80ns_array = read_hist_file(charge_doub_80ns, fsps_new)
+    fwhm_doub_no_delay_array = read_hist_file(fwhm_doub_no_delay, fsps_new)
+    fwhm_doub_05rt_array = read_hist_file(fwhm_doub_05rt, fsps_new)
+    fwhm_doub_1rt_array = read_hist_file(fwhm_doub_1rt, fsps_new)
+    fwhm_doub_15rt_array = read_hist_file(fwhm_doub_15rt, fsps_new)
+    fwhm_doub_2rt_array = read_hist_file(fwhm_doub_2rt, fsps_new)
+    fwhm_doub_25rt_array = read_hist_file(fwhm_doub_25rt, fsps_new)
+    fwhm_doub_3rt_array = read_hist_file(fwhm_doub_3rt, fsps_new)
+    fwhm_doub_35rt_array = read_hist_file(fwhm_doub_35rt, fsps_new)
+    fwhm_doub_4rt_array = read_hist_file(fwhm_doub_4rt, fsps_new)
+    fwhm_doub_45rt_array = read_hist_file(fwhm_doub_45rt, fsps_new)
+    fwhm_doub_5rt_array = read_hist_file(fwhm_doub_5rt, fsps_new)
+    fwhm_doub_55rt_array = read_hist_file(fwhm_doub_55rt, fsps_new)
+    fwhm_doub_6rt_array = read_hist_file(fwhm_doub_6rt, fsps_new)
+    fwhm_doub_40ns_array = read_hist_file(fwhm_doub_40ns, fsps_new)
+    fwhm_doub_80ns_array = read_hist_file(fwhm_doub_80ns, fsps_new)
+
+    amp_sing_mean = np.mean(amp_sing_array)
+    charge_sing_mean = np.mean(charge_sing_array)
+    fwhm_sing_mean = np.mean(fwhm_sing_array)
+    amp_doub_no_delay_mean = np.mean(amp_doub_no_delay_array)
+    amp_doub_05rt_mean = np.mean(amp_doub_05rt_array)
+    amp_doub_1rt_mean = np.mean(amp_doub_1rt_array)
+    amp_doub_15rt_mean = np.mean(amp_doub_15rt_array)
+    amp_doub_2rt_mean = np.mean(amp_doub_2rt_array)
+    amp_doub_25rt_mean = np.mean(amp_doub_25rt_array)
+    amp_doub_3rt_mean = np.mean(amp_doub_3rt_array)
+    amp_doub_35rt_mean = np.mean(amp_doub_35rt_array)
+    amp_doub_4rt_mean = np.mean(amp_doub_4rt_array)
+    amp_doub_45rt_mean = np.mean(amp_doub_45rt_array)
+    amp_doub_5rt_mean = np.mean(amp_doub_5rt_array)
+    amp_doub_55rt_mean = np.mean(amp_doub_55rt_array)
+    amp_doub_6rt_mean = np.mean(amp_doub_6rt_array)
+    amp_doub_40ns_mean = np.mean(amp_doub_40ns_array)
+    amp_doub_80ns_mean = np.mean(amp_doub_80ns_array)
+    charge_doub_no_delay_mean = np.mean(charge_doub_no_delay_array)
+    charge_doub_05rt_mean = np.mean(charge_doub_05rt_array)
+    charge_doub_1rt_mean = np.mean(charge_doub_1rt_array)
+    charge_doub_15rt_mean = np.mean(charge_doub_15rt_array)
+    charge_doub_2rt_mean = np.mean(charge_doub_2rt_array)
+    charge_doub_25rt_mean = np.mean(charge_doub_25rt_array)
+    charge_doub_3rt_mean = np.mean(charge_doub_3rt_array)
+    charge_doub_35rt_mean = np.mean(charge_doub_35rt_array)
+    charge_doub_4rt_mean = np.mean(charge_doub_4rt_array)
+    charge_doub_45rt_mean = np.mean(charge_doub_45rt_array)
+    charge_doub_5rt_mean = np.mean(charge_doub_5rt_array)
+    charge_doub_55rt_mean = np.mean(charge_doub_55rt_array)
+    charge_doub_6rt_mean = np.mean(charge_doub_6rt_array)
+    charge_doub_40ns_mean = np.mean(charge_doub_40ns_array)
+    charge_doub_80ns_mean = np.mean(charge_doub_80ns_array)
+    fwhm_doub_no_delay_mean = np.mean(fwhm_doub_no_delay_array)
+    fwhm_doub_05rt_mean = np.mean(fwhm_doub_05rt_array)
+    fwhm_doub_1rt_mean = np.mean(fwhm_doub_1rt_array)
+    fwhm_doub_15rt_mean = np.mean(fwhm_doub_15rt_array)
+    fwhm_doub_2rt_mean = np.mean(fwhm_doub_2rt_array)
+    fwhm_doub_25rt_mean = np.mean(fwhm_doub_25rt_array)
+    fwhm_doub_3rt_mean = np.mean(fwhm_doub_3rt_array)
+    fwhm_doub_35rt_mean = np.mean(fwhm_doub_35rt_array)
+    fwhm_doub_4rt_mean = np.mean(fwhm_doub_4rt_array)
+    fwhm_doub_45rt_mean = np.mean(fwhm_doub_45rt_array)
+    fwhm_doub_5rt_mean = np.mean(fwhm_doub_5rt_array)
+    fwhm_doub_55rt_mean = np.mean(fwhm_doub_55rt_array)
+    fwhm_doub_6rt_mean = np.mean(fwhm_doub_6rt_array)
+    fwhm_doub_40ns_mean = np.mean(fwhm_doub_40ns_array)
+    fwhm_doub_80ns_mean = np.mean(fwhm_doub_80ns_array)
+
+    amp_sing_std = np.std(amp_sing_array)
+    charge_sing_std = np.std(charge_sing_array)
+    fwhm_sing_std = np.std(fwhm_sing_array)
+    amp_doub_no_delay_std = np.std(amp_doub_no_delay_array)
+    amp_doub_05rt_std = np.std(amp_doub_05rt_array)
+    amp_doub_1rt_std = np.std(amp_doub_1rt_array)
+    amp_doub_15rt_std = np.std(amp_doub_15rt_array)
+    amp_doub_2rt_std = np.std(amp_doub_2rt_array)
+    amp_doub_25rt_std = np.std(amp_doub_25rt_array)
+    amp_doub_3rt_std = np.std(amp_doub_3rt_array)
+    amp_doub_35rt_std = np.std(amp_doub_35rt_array)
+    amp_doub_4rt_std = np.std(amp_doub_4rt_array)
+    amp_doub_45rt_std = np.std(amp_doub_45rt_array)
+    amp_doub_5rt_std = np.std(amp_doub_5rt_array)
+    amp_doub_55rt_std = np.std(amp_doub_55rt_array)
+    amp_doub_6rt_std = np.std(amp_doub_6rt_array)
+    amp_doub_40ns_std = np.std(amp_doub_40ns_array)
+    amp_doub_80ns_std = np.std(amp_doub_80ns_array)
+    charge_doub_no_delay_std = np.std(charge_doub_no_delay_array)
+    charge_doub_05rt_std = np.std(charge_doub_05rt_array)
+    charge_doub_1rt_std = np.std(charge_doub_1rt_array)
+    charge_doub_15rt_std = np.std(charge_doub_15rt_array)
+    charge_doub_2rt_std = np.std(charge_doub_2rt_array)
+    charge_doub_25rt_std = np.std(charge_doub_25rt_array)
+    charge_doub_3rt_std = np.std(charge_doub_3rt_array)
+    charge_doub_35rt_std = np.std(charge_doub_35rt_array)
+    charge_doub_4rt_std = np.std(charge_doub_4rt_array)
+    charge_doub_45rt_std = np.std(charge_doub_45rt_array)
+    charge_doub_5rt_std = np.std(charge_doub_5rt_array)
+    charge_doub_55rt_std = np.std(charge_doub_55rt_array)
+    charge_doub_6rt_std = np.std(charge_doub_6rt_array)
+    charge_doub_40ns_std = np.std(charge_doub_40ns_array)
+    charge_doub_80ns_std = np.std(charge_doub_80ns_array)
+    fwhm_doub_no_delay_std = np.std(fwhm_doub_no_delay_array)
+    fwhm_doub_05rt_std = np.std(fwhm_doub_05rt_array)
+    fwhm_doub_1rt_std = np.std(fwhm_doub_1rt_array)
+    fwhm_doub_15rt_std = np.std(fwhm_doub_15rt_array)
+    fwhm_doub_2rt_std = np.std(fwhm_doub_2rt_array)
+    fwhm_doub_25rt_std = np.std(fwhm_doub_25rt_array)
+    fwhm_doub_3rt_std = np.std(fwhm_doub_3rt_array)
+    fwhm_doub_35rt_std = np.std(fwhm_doub_35rt_array)
+    fwhm_doub_4rt_std = np.std(fwhm_doub_4rt_array)
+    fwhm_doub_45rt_std = np.std(fwhm_doub_45rt_array)
+    fwhm_doub_5rt_std = np.std(fwhm_doub_5rt_array)
+    fwhm_doub_55rt_std = np.std(fwhm_doub_55rt_array)
+    fwhm_doub_6rt_std = np.std(fwhm_doub_6rt_array)
+    fwhm_doub_40ns_std = np.std(fwhm_doub_40ns_array)
+    fwhm_doub_80ns_std = np.std(fwhm_doub_80ns_array)
+
+    return amp_sing_mean, charge_sing_mean, fwhm_sing_mean, amp_doub_no_delay_mean, amp_doub_05rt_mean, \
+           amp_doub_1rt_mean, amp_doub_15rt_mean, amp_doub_2rt_mean, amp_doub_25rt_mean, amp_doub_3rt_mean, \
+           amp_doub_35rt_mean, amp_doub_4rt_mean, amp_doub_45rt_mean, amp_doub_5rt_mean, amp_doub_55rt_mean, \
+           amp_doub_6rt_mean, amp_doub_40ns_mean, amp_doub_80ns_mean, charge_doub_no_delay_mean, charge_doub_05rt_mean,\
+           charge_doub_1rt_mean, charge_doub_15rt_mean, charge_doub_2rt_mean, charge_doub_25rt_mean, \
+           charge_doub_3rt_mean, charge_doub_35rt_mean, charge_doub_4rt_mean, charge_doub_45rt_mean, \
+           charge_doub_5rt_mean, charge_doub_55rt_mean, charge_doub_6rt_mean, charge_doub_40ns_mean, \
+           charge_doub_80ns_mean, fwhm_doub_no_delay_mean, fwhm_doub_05rt_mean, fwhm_doub_1rt_mean, \
+           fwhm_doub_15rt_mean, fwhm_doub_2rt_mean, fwhm_doub_25rt_mean, fwhm_doub_3rt_mean, fwhm_doub_35rt_mean, \
+           fwhm_doub_4rt_mean, fwhm_doub_45rt_mean, fwhm_doub_5rt_mean, fwhm_doub_55rt_mean, fwhm_doub_6rt_mean, \
+           fwhm_doub_40ns_mean, fwhm_doub_80ns_mean, amp_sing_std, charge_sing_std, fwhm_sing_std, \
+           amp_doub_no_delay_std, amp_doub_05rt_std, amp_doub_1rt_std, amp_doub_15rt_std, amp_doub_2rt_std, \
+           amp_doub_25rt_std, amp_doub_3rt_std, amp_doub_35rt_std, amp_doub_4rt_std, amp_doub_45rt_std, \
+           amp_doub_5rt_std, amp_doub_55rt_std, amp_doub_6rt_std, amp_doub_40ns_std, amp_doub_80ns_std, \
+           charge_doub_no_delay_std, charge_doub_05rt_std, charge_doub_1rt_std, charge_doub_15rt_std, \
+           charge_doub_2rt_std, charge_doub_25rt_std, charge_doub_3rt_std, charge_doub_35rt_std, charge_doub_4rt_std, \
+           charge_doub_45rt_std, charge_doub_5rt_std, charge_doub_55rt_std, charge_doub_6rt_std, charge_doub_40ns_std, \
+           charge_doub_80ns_std, fwhm_doub_no_delay_std, fwhm_doub_05rt_std, fwhm_doub_1rt_std, fwhm_doub_15rt_std, \
+           fwhm_doub_2rt_std, fwhm_doub_25rt_std, fwhm_doub_3rt_std, fwhm_doub_35rt_std, fwhm_doub_4rt_std, \
+           fwhm_doub_45rt_std, fwhm_doub_5rt_std, fwhm_doub_55rt_std, fwhm_doub_6rt_std, fwhm_doub_40ns_std, \
+           fwhm_doub_80ns_std
+
+
+# Creates plots of false SPE rate vs delay
+def false_spes_vs_delay(start, end, factor, parameter, parameter_title, units, fsps_new, means, meanno, mean05, mean1,
+                        mean15, mean2, mean25, mean3, mean35, mean4, mean45, mean5, mean55, mean6, mean40, mean80,
+                        sds, sdno, sd05, sd1, sd15, sd2, sd25, sd3, sd35, sd4, sd45, sd5, sd55, sd6, sd40, sd80,
+                        dest_path, shaping):
+    cutoff_array = np.array([])
+    spes_as_mpes_array = np.array([])
+    mpes_as_spes_array = np.array([])
+    mpes_as_spes_no_array = np.array([])
+    mpes_as_spes_05x_array = np.array([])
+    mpes_as_spes_1x_array = np.array([])
+    mpes_as_spes_15x_array = np.array([])
+    mpes_as_spes_2x_array = np.array([])
+    mpes_as_spes_25x_array = np.array([])
+    mpes_as_spes_3x_array = np.array([])
+    mpes_as_spes_35x_array = np.array([])
+    mpes_as_spes_4x_array = np.array([])
+    mpes_as_spes_45x_array = np.array([])
+    mpes_as_spes_5x_array = np.array([])
+    mpes_as_spes_55x_array = np.array([])
+    mpes_as_spes_6x_array = np.array([])
+    mpes_as_spes_40_array = np.array([])
+    mpes_as_spes_80_array = np.array([])
+
+    for i in range(start, end):
+        x = i * factor
+        cutoff_array = np.append(cutoff_array, x)
+        spes_as_mpes = 100 * (1 + ((1 / 2) * (-2 + math.erfc((x - means) / (sds * math.sqrt(2))))))
+        mpes_as_spes_no = 100 * ((1 / 2) * (2 - math.erfc((x - meanno) / (sdno * math.sqrt(2)))))
+        mpes_as_spes_05x = 100 * ((1 / 2) * (2 - math.erfc((x - mean05) / (sd05 * math.sqrt(2)))))
+        mpes_as_spes_1x = 100 * ((1 / 2) * (2 - math.erfc((x - mean1) / (sd1 * math.sqrt(2)))))
+        mpes_as_spes_15x = 100 * ((1 / 2) * (2 - math.erfc((x - mean15) / (sd15 * math.sqrt(2)))))
+        mpes_as_spes_2x = 100 * ((1 / 2) * (2 - math.erfc((x - mean2) / (sd2 * math.sqrt(2)))))
+        mpes_as_spes_25x = 100 * ((1 / 2) * (2 - math.erfc((x - mean25) / (sd25 * math.sqrt(2)))))
+        mpes_as_spes_3x = 100 * ((1 / 2) * (2 - math.erfc((x - mean3) / (sd3 * math.sqrt(2)))))
+        mpes_as_spes_35x = 100 * ((1 / 2) * (2 - math.erfc((x - mean35) / (sd35 * math.sqrt(2)))))
+        mpes_as_spes_4x = 100 * ((1 / 2) * (2 - math.erfc((x - mean4) / (sd4 * math.sqrt(2)))))
+        mpes_as_spes_45x = 100 * ((1 / 2) * (2 - math.erfc((x - mean45) / (sd45 * math.sqrt(2)))))
+        mpes_as_spes_5x = 100 * ((1 / 2) * (2 - math.erfc((x - mean5) / (sd5 * math.sqrt(2)))))
+        mpes_as_spes_55x = 100 * ((1 / 2) * (2 - math.erfc((x - mean55) / (sd55 * math.sqrt(2)))))
+        mpes_as_spes_6x = 100 * ((1 / 2) * (2 - math.erfc((x - mean6) / (sd6 * math.sqrt(2)))))
+        mpes_as_spes_40 = 100 * ((1 / 2) * (2 - math.erfc((x - mean40) / (sd40 * math.sqrt(2)))))
+        mpes_as_spes_80 = 100 * ((1 / 2) * (2 - math.erfc((x - mean80) / (sd80 * math.sqrt(2)))))
+        spes_as_mpes_array = np.append(spes_as_mpes_array, spes_as_mpes)
+        mpes_as_spes_no_array = np.append(mpes_as_spes_no_array, mpes_as_spes_no)
+        mpes_as_spes_05x_array = np.append(mpes_as_spes_05x_array, mpes_as_spes_05x)
+        mpes_as_spes_1x_array = np.append(mpes_as_spes_1x_array, mpes_as_spes_1x)
+        mpes_as_spes_15x_array = np.append(mpes_as_spes_15x_array, mpes_as_spes_15x)
+        mpes_as_spes_2x_array = np.append(mpes_as_spes_2x_array, mpes_as_spes_2x)
+        mpes_as_spes_25x_array = np.append(mpes_as_spes_25x_array, mpes_as_spes_25x)
+        mpes_as_spes_3x_array = np.append(mpes_as_spes_3x_array, mpes_as_spes_3x)
+        mpes_as_spes_35x_array = np.append(mpes_as_spes_35x_array, mpes_as_spes_35x)
+        mpes_as_spes_4x_array = np.append(mpes_as_spes_4x_array, mpes_as_spes_4x)
+        mpes_as_spes_45x_array = np.append(mpes_as_spes_45x_array, mpes_as_spes_45x)
+        mpes_as_spes_5x_array = np.append(mpes_as_spes_5x_array, mpes_as_spes_5x)
+        mpes_as_spes_55x_array = np.append(mpes_as_spes_55x_array, mpes_as_spes_55x)
+        mpes_as_spes_6x_array = np.append(mpes_as_spes_6x_array, mpes_as_spes_6x)
+        mpes_as_spes_40_array = np.append(mpes_as_spes_40_array, mpes_as_spes_40)
+        mpes_as_spes_80_array = np.append(mpes_as_spes_80_array, mpes_as_spes_80)
+
+    cutoff_array_2 = np.linspace(start * factor, end * factor, 1000)
+    spes_as_mpes_array_2 = np.interp(cutoff_array_2, cutoff_array, spes_as_mpes_array)
+    mpes_as_spes_no_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_no_array)
+    mpes_as_spes_05x_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_05x_array)
+    mpes_as_spes_1x_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_1x_array)
+    mpes_as_spes_15x_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_15x_array)
+    mpes_as_spes_2x_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_2x_array)
+    mpes_as_spes_25x_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_25x_array)
+    mpes_as_spes_3x_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_3x_array)
+    mpes_as_spes_35x_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_35x_array)
+    mpes_as_spes_4x_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_4x_array)
+    mpes_as_spes_45x_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_45x_array)
+    mpes_as_spes_5x_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_5x_array)
+    mpes_as_spes_55x_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_55x_array)
+    mpes_as_spes_6x_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_6x_array)
+    mpes_as_spes_40_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_40_array)
+    mpes_as_spes_80_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_80_array)
+
+    idx = np.argmin(np.abs(spes_as_mpes_array_2 - 1))
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_no_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_05x_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_1x_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_15x_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_2x_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_25x_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_3x_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_35x_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_4x_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_45x_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_5x_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_55x_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_6x_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_40_array_2[idx])
+    mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes_80_array_2[idx])
+
+    delay_array = np.array([0, 1.52e-9, 3.04e-9, 4.56e-9, 6.08e-9, 7.6e-9, 9.12e-9, 1.064e-8, 1.216e-8, 1.368e-8,
+                            1.52e-8, 1.672e-8, 1.824e-8, 4e-8, 8e-8])
+    cutoff = str(float(format(cutoff_array_2[idx], '.2e')))
+
+    plt.scatter(delay_array, mpes_as_spes_array)
+    plt.plot(delay_array, mpes_as_spes_array)
+    plt.xlim(-1e-8, 8.2e-8)
+    plt.ylim(-5, 100)
+    plt.xlabel('Delay (s)')
+    plt.ylabel('% MPES Misidentified as SPEs')
+    plt.title('False SPEs\n' + parameter_title + ' Cutoff = ' + cutoff + ' (' + units + ') (1% False MPEs)')
+    for i in range(len(mpes_as_spes_array)):
+        pt = str(float(format(mpes_as_spes_array[i], '.1e')))
+        plt.annotate(pt + '%', (delay_array[i], mpes_as_spes_array[i] + 1))
+    plt.savefig(dest_path / 'plots' / str('false_spes_delay_' + parameter + '_' + str(int(fsps_new / 1e6)) + '_Msps_' +
+                                          shaping + '.png'), dpi=360)
+    plt.close()
+
+
+# Creates plots of false SPE & MPE rate vs cutoff
+def false_spes_mpes(start, end, factor, parameter, parameter_title, units, means, meand, sds, sdd, fsps_new, dest_path,
+                    shaping):
+    cutoff_array = np.array([])
+    spes_as_mpes_array = np.array([])
+    mpes_as_spes_array = np.array([])
+
+    for i in range(start, end):
+        x = i * factor
+        cutoff_array = np.append(cutoff_array, x)
+        spes_as_mpes = 100 * (1 + ((1 / 2) * (-2 + math.erfc((x - means) / (sds * math.sqrt(2))))))
+        mpes_as_spes = 100 * ((1 / 2) * (2 - math.erfc((x - meand) / (sdd * math.sqrt(2)))))
+        spes_as_mpes_array = np.append(spes_as_mpes_array, spes_as_mpes)
+        mpes_as_spes_array = np.append(mpes_as_spes_array, mpes_as_spes)
+
+    cutoff_array_2 = np.linspace(start * factor, end * factor, 1000)
+    spes_as_mpes_array_2 = np.interp(cutoff_array_2, cutoff_array, spes_as_mpes_array)
+    mpes_as_spes_array_2 = np.interp(cutoff_array_2, cutoff_array, mpes_as_spes_array)
+    idx = np.argmin(np.abs(spes_as_mpes_array_2 - 1))
+    cutoff = float(format(cutoff_array_2[idx], '.2e'))
+    false_spe = float(format(mpes_as_spes_array_2[idx], '.2e'))
+
+    plt.plot(cutoff_array, spes_as_mpes_array)
+    plt.ylim(-5, 100)
+    plt.hlines(1, start * factor, end * factor)
+    plt.xlabel(parameter_title + ' Cutoff (' + units + ')')
+    plt.ylabel('% SPES Misidentified as MPEs')
+    plt.title('False MPEs\n' + parameter_title + ' Cutoff: ' + str(cutoff) + ' ' + units)
+    plt.annotate('1% false MPEs', (start * factor, 3))
+    plt.savefig(dest_path / 'plots' / str('false_mpes_' + parameter + '_' + str(int(fsps_new / 1e6)) + '_Msps_' +
+                                          shaping + '.png'), dpi=360)
+    plt.close()
+
+    plt.plot(cutoff_array, mpes_as_spes_array)
+    plt.ylim(-5, 100)
+    plt.vlines(cutoff, 0, 100)
+    plt.xlabel(parameter_title + ' Cutoff (' + units + ')')
+    plt.ylabel('% MPES Misidentified as SPEs')
+    plt.title('False SPEs\n' + parameter_title + ' Cutoff: ' + str(cutoff) + ' ' + units)
+    plt.annotate(str(str(false_spe) + '% false SPEs'), (cutoff, -2))
+    plt.savefig(dest_path / 'plots' / str('false_spes_' + parameter + '_' + str(int(fsps_new / 1e6)) + '_Msps_' +
+                                          shaping + '.png'), dpi=360)
+    plt.close()
+
+
+# Creates plots displaying cutoffs and false SPE rates
+def make_plots(amp_sing_mean, charge_sing_mean, fwhm_sing_mean, amp_doub_no_delay_mean, amp_doub_05rt_mean,
+               amp_doub_1rt_mean, amp_doub_15rt_mean, amp_doub_2rt_mean, amp_doub_25rt_mean, amp_doub_3rt_mean,
+               amp_doub_35rt_mean, amp_doub_4rt_mean, amp_doub_45rt_mean, amp_doub_5rt_mean, amp_doub_55rt_mean,
+               amp_doub_6rt_mean, amp_doub_40ns_mean, amp_doub_80ns_mean, charge_doub_no_delay_mean,
+               charge_doub_05rt_mean, charge_doub_1rt_mean, charge_doub_15rt_mean, charge_doub_2rt_mean,
+               charge_doub_25rt_mean, charge_doub_3rt_mean, charge_doub_35rt_mean, charge_doub_4rt_mean,
+               charge_doub_45rt_mean, charge_doub_5rt_mean, charge_doub_55rt_mean, charge_doub_6rt_mean,
+               charge_doub_40ns_mean, charge_doub_80ns_mean, fwhm_doub_no_delay_mean, fwhm_doub_05rt_mean,
+               fwhm_doub_1rt_mean, fwhm_doub_15rt_mean, fwhm_doub_2rt_mean, fwhm_doub_25rt_mean, fwhm_doub_3rt_mean,
+               fwhm_doub_35rt_mean, fwhm_doub_4rt_mean, fwhm_doub_45rt_mean, fwhm_doub_5rt_mean, fwhm_doub_55rt_mean,
+               fwhm_doub_6rt_mean, fwhm_doub_40ns_mean, fwhm_doub_80ns_mean, amp_sing_std, charge_sing_std,
+               fwhm_sing_std, amp_doub_no_delay_std, amp_doub_05rt_std, amp_doub_1rt_std, amp_doub_15rt_std,
+               amp_doub_2rt_std, amp_doub_25rt_std, amp_doub_3rt_std, amp_doub_35rt_std, amp_doub_4rt_std,
+               amp_doub_45rt_std, amp_doub_5rt_std, amp_doub_55rt_std, amp_doub_6rt_std, amp_doub_40ns_std,
+               amp_doub_80ns_std, charge_doub_no_delay_std, charge_doub_05rt_std, charge_doub_1rt_std,
+               charge_doub_15rt_std, charge_doub_2rt_std, charge_doub_25rt_std, charge_doub_3rt_std,
+               charge_doub_35rt_std, charge_doub_4rt_std, charge_doub_45rt_std, charge_doub_5rt_std,
+               charge_doub_55rt_std, charge_doub_6rt_std, charge_doub_40ns_std, charge_doub_80ns_std,
+               fwhm_doub_no_delay_std, fwhm_doub_05rt_std, fwhm_doub_1rt_std, fwhm_doub_15rt_std, fwhm_doub_2rt_std,
+               fwhm_doub_25rt_std, fwhm_doub_3rt_std, fwhm_doub_35rt_std, fwhm_doub_4rt_std, fwhm_doub_45rt_std,
+               fwhm_doub_5rt_std, fwhm_doub_55rt_std, fwhm_doub_6rt_std, fwhm_doub_40ns_std, fwhm_doub_80ns_std,
+               shaping, fsps_new, dest_path):
+    print('Making plots...')
+
+    if shaping == 'rt_1':
+        start_fwhm = 5
+        end_fwhm = 35
+        factor_fwhm = 10 ** -9
+        start_charge = 10
+        end_charge = 125
+        factor_charge = 10 ** -9
+        start_amp = 50
+        end_amp = 550
+        factor_amp = 1
+    elif shaping == 'rt_2':
+        start_fwhm = 10
+        end_fwhm = 60
+        factor_fwhm = 10 ** -9
+        start_charge = 10
+        end_charge = 125
+        factor_charge = 10 ** -9
+        start_amp = 25
+        end_amp = 200
+        factor_amp = 1
+    else:
+        start_fwhm = 20
+        end_fwhm = 80
+        factor_fwhm = 10 ** -9
+        start_charge = 10
+        end_charge = 125
+        factor_charge = 10 ** -9
+        start_amp = 20
+        end_amp = 150
+        factor_amp = 1
+
+    false_spes_vs_delay(start_fwhm, end_fwhm, factor_fwhm, 'fwhm', 'FWHM', 's', fsps_new, fwhm_sing_mean,
+                        fwhm_doub_no_delay_mean, fwhm_doub_05rt_mean, fwhm_doub_1rt_mean, fwhm_doub_15rt_mean,
+                        fwhm_doub_2rt_mean, fwhm_doub_25rt_mean, fwhm_doub_3rt_mean, fwhm_doub_35rt_mean,
+                        fwhm_doub_4rt_mean, fwhm_doub_45rt_mean, fwhm_doub_5rt_mean, fwhm_doub_55rt_mean,
+                        fwhm_doub_6rt_mean, fwhm_doub_40ns_mean, fwhm_doub_80ns_mean, fwhm_sing_std,
+                        fwhm_doub_no_delay_std, fwhm_doub_05rt_std, fwhm_doub_1rt_std, fwhm_doub_15rt_std,
+                        fwhm_doub_2rt_std, fwhm_doub_25rt_std, fwhm_doub_3rt_std, fwhm_doub_35rt_std, fwhm_doub_4rt_std,
+                        fwhm_doub_45rt_std, fwhm_doub_5rt_std, fwhm_doub_55rt_std, fwhm_doub_6rt_std,
+                        fwhm_doub_40ns_std, fwhm_doub_80ns_std, dest_path, shaping)
+
+    false_spes_mpes(start_charge, end_charge, factor_charge, 'charge', 'Charge', 's*bit/ohm', charge_sing_mean,
+                    charge_doub_no_delay_mean, charge_sing_std, charge_doub_no_delay_std, fsps_new, dest_path, shaping)
+    false_spes_mpes(start_amp, end_amp, factor_amp, 'amp', 'Amplitude', 'bits', amp_sing_mean, amp_doub_no_delay_mean,
+                    amp_sing_std, amp_doub_no_delay_std, fsps_new, dest_path, shaping)
