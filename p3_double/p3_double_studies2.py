@@ -41,8 +41,15 @@ def double_spe_studies_2(date, filter_band, fsps_new, shaping):
                 fwhm_doub_25rt, fwhm_doub_3rt, fwhm_doub_35rt, fwhm_doub_4rt, fwhm_doub_45rt, fwhm_doub_5rt,
                 fwhm_doub_55rt, fwhm_doub_6rt, fwhm_doub_40ns, fwhm_doub_80ns, fsps_new)
 
-
-
+    make_plots(amp_sing_mean, charge_sing_mean, fwhm_sing_mean, amp_doub_no_delay_mean, charge_doub_no_delay_mean,
+               fwhm_doub_no_delay_mean, fwhm_doub_05rt_mean, fwhm_doub_1rt_mean, fwhm_doub_15rt_mean,
+               fwhm_doub_2rt_mean, fwhm_doub_25rt_mean, fwhm_doub_3rt_mean, fwhm_doub_35rt_mean, fwhm_doub_4rt_mean,
+               fwhm_doub_45rt_mean, fwhm_doub_5rt_mean, fwhm_doub_55rt_mean, fwhm_doub_6rt_mean, fwhm_doub_40ns_mean,
+               fwhm_doub_80ns_mean, amp_sing_std, charge_sing_std, fwhm_sing_std, amp_doub_no_delay_std,
+               charge_doub_no_delay_std, fwhm_doub_no_delay_std, fwhm_doub_05rt_std, fwhm_doub_1rt_std,
+               fwhm_doub_15rt_std, fwhm_doub_2rt_std, fwhm_doub_25rt_std, fwhm_doub_3rt_std, fwhm_doub_35rt_std,
+               fwhm_doub_4rt_std, fwhm_doub_45rt_std, fwhm_doub_5rt_std, fwhm_doub_55rt_std, fwhm_doub_6rt_std,
+               fwhm_doub_40ns_std, fwhm_doub_80ns_std, shaping, fsps_new, dest_path)
 
 
 if __name__ == '__main__':

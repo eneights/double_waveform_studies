@@ -50,8 +50,9 @@ def ww(x, y, file_name, hdr):
 
 
 # Creates text file with time of beginning of spe, time of end of spe, charge, amplitude, and fwhm for a single spe file
-def save_calculations_s(dest_path, item, t1, t2, charge, amplitude, fwhm, shaping):
-    file_name = str(dest_path / 'calculations_single' / shaping / 'D3--waveforms--%05d.txt') % item
+def save_calculations_s(dest_path, item, t1, t2, charge, amplitude, fwhm, shaping, fsps_new):
+    file_name = str(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / shaping /
+                    'D3--waveforms--%05d.txt') % item
     myfile = open(file_name, 'w')
     myfile.write('t1,' + str(t1))
     myfile.write('\nt2,' + str(t2))
@@ -62,8 +63,9 @@ def save_calculations_s(dest_path, item, t1, t2, charge, amplitude, fwhm, shapin
 
 
 # Creates text file with time of beginning of spe, time of end of spe, charge, amplitude, fwhm for a double spe file
-def save_calculations_d(dest_path, delay_folder, item, t1, t2, charge, amplitude, fwhm, shaping):
-    file_name = str(dest_path / 'calculations_double' / delay_folder / shaping / 'D3--waveforms--%s.txt') % item
+def save_calculations_d(dest_path, delay_folder, item, t1, t2, charge, amplitude, fwhm, shaping, fsps_new):
+    file_name = str(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') / delay_folder / shaping
+                    / 'D3--waveforms--%s.txt') % item
     myfile = open(file_name, 'w')
     myfile.write('t1,' + str(t1))
     myfile.write('\nt2,' + str(t2))
@@ -694,39 +696,54 @@ def make_folders(dest_path, filt_path1, filt_path2, filt_path4, filt_path8, fsps
     if not os.path.exists(Path(dest_path / 'calculations_single')):
         print('Creating single calculations data folder')
         os.mkdir(Path(dest_path / 'calculations_single'))
-    if not os.path.exists(Path(dest_path / 'calculations_single' / 'rt_1')):
+    if not os.path.exists(Path(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps'))):
+        print('Creating single digitized calculations data folder')
+        os.mkdir(Path(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps')))
+    if not os.path.exists(Path(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / 'rt_1')):
         print('Creating single rt_1 calculations folder')
-        os.mkdir(Path(dest_path / 'calculations_single' / 'rt_1'))
-    if not os.path.exists(Path(dest_path / 'calculations_single' / 'rt_2')):
+        os.mkdir(Path(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / 'rt_1'))
+    if not os.path.exists(Path(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / 'rt_2')):
         print('Creating single rt_2 calculations folder')
-        os.mkdir(Path(dest_path / 'calculations_single' / 'rt_2'))
-    if not os.path.exists(Path(dest_path / 'calculations_single' / 'rt_4')):
+        os.mkdir(Path(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / 'rt_2'))
+    if not os.path.exists(Path(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / 'rt_4')):
         print('Creating single rt_4 calculations folder')
-        os.mkdir(Path(dest_path / 'calculations_single' / 'rt_4'))
-    if not os.path.exists(Path(dest_path / 'calculations_single' / 'rt_8')):
+        os.mkdir(Path(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / 'rt_4'))
+    if not os.path.exists(Path(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / 'rt_8')):
         print('Creating single rt_8 calculations folder')
-        os.mkdir(Path(dest_path / 'calculations_single' / 'rt_8'))
+        os.mkdir(Path(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / 'rt_8'))
     if not os.path.exists(Path(dest_path / 'hist_data_double')):
         print('Creating single histogram data folder')
         os.mkdir(Path(dest_path / 'hist_data_double'))
     if not os.path.exists(Path(dest_path / 'calculations_double')):
         print('Creating double calculations data folder')
         os.mkdir(Path(dest_path / 'calculations_double'))
-    if not os.path.exists(Path(dest_path / 'calculations_double' / delay_folder)):
+    if not os.path.exists(Path(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps'))):
+        print('Creating double digitized calculations data folder')
+        os.mkdir(Path(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps')))
+    if not os.path.exists(Path(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') /
+                               delay_folder)):
         print('Creating double calculations delay folder')
-        os.mkdir(Path(dest_path / 'calculations_double' / delay_folder))
-    if not os.path.exists(Path(dest_path / 'calculations_double' / delay_folder / 'rt_1')):
+        os.mkdir(Path(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') / delay_folder))
+    if not os.path.exists(Path(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') /
+                               delay_folder / 'rt_1')):
         print('Creating double rt_1 calculations folder')
-        os.mkdir(Path(dest_path / 'calculations_double' / delay_folder / 'rt_1'))
-    if not os.path.exists(Path(dest_path / 'calculations_double' / delay_folder / 'rt_2')):
+        os.mkdir(Path(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                      'rt_1'))
+    if not os.path.exists(Path(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') /
+                               delay_folder / 'rt_2')):
         print('Creating double rt_2 calculations folder')
-        os.mkdir(Path(dest_path / 'calculations_double' / delay_folder / 'rt_2'))
-    if not os.path.exists(Path(dest_path / 'calculations_double' / delay_folder / 'rt_4')):
+        os.mkdir(Path(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                      'rt_2'))
+    if not os.path.exists(Path(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') /
+                               delay_folder / 'rt_4')):
         print('Creating double rt_4 calculations folder')
-        os.mkdir(Path(dest_path / 'calculations_double' / delay_folder / 'rt_4'))
-    if not os.path.exists(Path(dest_path / 'calculations_double' / delay_folder / 'rt_8')):
+        os.mkdir(Path(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                      'rt_4'))
+    if not os.path.exists(Path(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') /
+                               delay_folder / 'rt_8')):
         print('Creating double rt_8 calculations folder')
-        os.mkdir(Path(dest_path / 'calculations_double' / delay_folder / 'rt_8'))
+        os.mkdir(Path(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                      'rt_8'))
     if not os.path.exists(Path(dest_path / 'plots')):
         print('Creating plots folder')
         os.mkdir(Path(dest_path / 'plots'))
@@ -1103,7 +1120,7 @@ def append_arrays(t1, t2, charge, amplitude, fwhm, t1_array, t2_array, charge_ar
 
 # Removes single spe waveform from all spe folders
 def remove_spe_s(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_8_path_dig, rt_1_path_dow,
-                 rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, shaping):
+                 rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, shaping, fsps_new):
     t, v, hdr = rw(str(Path(rt_1_path_raw) / 'D3--waveforms--%05d.txt') % number, nhdr)
     ww(t, v, str(dest_path / 'unusable_data' / 'D3--waveforms--%05d.txt') % number, hdr)
     if os.path.isfile(str(Path(rt_1_path_dig) / 'D3--waveforms--%05d.txt') % number):
@@ -1122,13 +1139,15 @@ def remove_spe_s(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_
         os.remove(str(Path(rt_4_path_dow) / 'D3--waveforms--%05d.txt') % number)
     if os.path.isfile(str(Path(rt_8_path_dow) / 'D3--waveforms--%05d.txt') % number):
         os.remove(str(Path(rt_8_path_dow) / 'D3--waveforms--%05d.txt') % number)
-    if os.path.isfile(str(Path(dest_path) / 'calculations_single' / shaping / 'D3--waveforms--%05d.txt') % number):
-        os.remove(str(Path(dest_path) / 'calculations_single' / shaping / 'D3--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(Path(dest_path) / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / shaping /
+                          'D3--waveforms--%05d.txt') % number):
+        os.remove(str(Path(dest_path) / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / shaping /
+                      'D3--waveforms--%05d.txt') % number)
 
 
 # Removes double spe waveform from all spe folders
 def remove_spe_d(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_8_path_dig, rt_1_path_dow,
-                 rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, delay_folder, shaping):
+                 rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, delay_folder, shaping, fsps_new):
     t, v, hdr = rw(str(Path(rt_1_path_raw) / 'D3--waveforms--%s.txt') % number, nhdr)
     ww(t, v, str(Path(dest_path) / 'unusable_data' / 'D3--waveforms--%s.txt') % number, hdr)
     if os.path.isfile(str(Path(rt_1_path_dig) / 'D3--waveforms--%s.txt') % number):
@@ -1147,10 +1166,10 @@ def remove_spe_d(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_
         os.remove(str(Path(rt_4_path_dow) / 'D3--waveforms--%s.txt') % number)
     if os.path.isfile(str(Path(rt_8_path_dow) / 'D3--waveforms--%s.txt') % number):
         os.remove(str(Path(rt_8_path_dow) / 'D3--waveforms--%s.txt') % number)
-    if os.path.isfile(str(Path(dest_path) / 'calculations_double' / delay_folder / shaping / 'D3--waveforms--%s.txt')
-                      % number):
-        os.remove(str(Path(dest_path) / 'calculations_double' / delay_folder / shaping / 'D3--waveforms--%s.txt') %
-                  number)
+    if os.path.isfile(str(Path(dest_path) / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') /
+                          delay_folder / shaping / 'D3--waveforms--%s.txt') % number):
+        os.remove(str(Path(dest_path) / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') /
+                      delay_folder / shaping / 'D3--waveforms--%s.txt') % number)
 
 
 # Calculates beginning & end times of spe waveform, charge, amplitude, fwhm, 10-90 & 20-80 rise times, 10-90 & 20-80
@@ -1188,10 +1207,10 @@ def create_arrays_s(calc_file, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_
     rt_8_path_dig = str(rt_8_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps'))
 
     # Any spe waveform that returns impossible values is put into the not_spe folder
-    if possibility == 'impossible':
+    if possibility == 'impossible' and not shaping == 'rt_8':
         print('Removing file #%05d' % number)
         remove_spe_s(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_8_path_dig, rt_1_path_dow,
-                     rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, shaping)
+                     rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, shaping, fsps_new)
 
     # All other spe waveforms' calculations are placed into arrays
     else:
@@ -1199,7 +1218,7 @@ def create_arrays_s(calc_file, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_
             append_arrays(t1, t2, charge, amplitude, fwhm, t1_array, t2_array, charge_array, amplitude_array,
                           fwhm_array)
         if not os.path.isfile(calc_file):
-            save_calculations_s(dest_path, number, t1, t2, charge, amplitude, fwhm, shaping)
+            save_calculations_s(dest_path, number, t1, t2, charge, amplitude, fwhm, shaping, fsps_new)
 
     return t1_array, t2_array, charge_array, amplitude_array, fwhm_array
 
@@ -1220,10 +1239,11 @@ def create_arrays_d(calc_file, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_
     rt_8_path_dig = str(rt_8_path / str('digitized_' + str(int(fsps_new / 1e6)) + '_Msps') / delay_folder)
 
     # Any spe waveform that returns impossible values is put into the not_spe folder
-    if possibility == 'impossible':
+    if possibility == 'impossible' and not shaping == 'rt_8':
         print('Removing file #%s' % number)
         remove_spe_d(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_8_path_dig, rt_1_path_dow,
-                     rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, delay_folder, shaping)
+                     rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, delay_folder, shaping,
+                     fsps_new)
 
     # All other spe waveforms' calculations are placed into arrays
     else:
@@ -1231,7 +1251,7 @@ def create_arrays_d(calc_file, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_
             append_arrays(t1, t2, charge, amplitude, fwhm, t1_array, t2_array, charge_array, amplitude_array,
                           fwhm_array)
         if not os.path.isfile(calc_file):
-            save_calculations_d(dest_path, delay_folder, number, t1, t2, charge, amplitude, fwhm, shaping)
+            save_calculations_d(dest_path, delay_folder, number, t1, t2, charge, amplitude, fwhm, shaping, fsps_new)
 
     return t1_array, t2_array, charge_array, amplitude_array, fwhm_array
 
@@ -1243,7 +1263,8 @@ def make_arrays_s(save_shift, dest_path, array, nhdr, r, fsps_new, shaping):
 
     for item in array:
         file_name1 = str(save_shift / 'D3--waveforms--%05d.txt') % item
-        file_name2 = str(dest_path / 'calculations_single' / shaping / 'D3--waveforms--%05d.txt') % item
+        file_name2 = str(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / shaping /
+                         'D3--waveforms--%05d.txt') % item
 
         ''' and not os.path.isfile(str(dest_path / 'unusable_data' /
                                                                  'D3--waveforms--%05d.txt') % item)'''
@@ -1279,7 +1300,8 @@ def make_arrays_d(save_shift, dest_path, delay_folder, array, nhdr, r, fsps_new,
 
     for item in array:
         file_name1 = str(save_shift / 'D3--waveforms--%s.txt') % item
-        file_name2 = str(dest_path / 'calculations_double' / delay_folder / shaping / 'D3--waveforms--%s.txt') % item
+        file_name2 = str(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
+                         shaping / 'D3--waveforms--%s.txt') % item
 
         ''' and not os.path.isfile(str(dest_path / 'unusable_data' /
                                                                  'D3--waveforms--%s.txt') % item)'''
@@ -1770,28 +1792,15 @@ def false_spes_mpes(start, end, factor, parameter, parameter_title, units, means
 
 
 # Creates plots displaying cutoffs and false SPE rates
-def make_plots(amp_sing_mean, charge_sing_mean, fwhm_sing_mean, amp_doub_no_delay_mean, amp_doub_05rt_mean,
-               amp_doub_1rt_mean, amp_doub_15rt_mean, amp_doub_2rt_mean, amp_doub_25rt_mean, amp_doub_3rt_mean,
-               amp_doub_35rt_mean, amp_doub_4rt_mean, amp_doub_45rt_mean, amp_doub_5rt_mean, amp_doub_55rt_mean,
-               amp_doub_6rt_mean, amp_doub_40ns_mean, amp_doub_80ns_mean, charge_doub_no_delay_mean,
-               charge_doub_05rt_mean, charge_doub_1rt_mean, charge_doub_15rt_mean, charge_doub_2rt_mean,
-               charge_doub_25rt_mean, charge_doub_3rt_mean, charge_doub_35rt_mean, charge_doub_4rt_mean,
-               charge_doub_45rt_mean, charge_doub_5rt_mean, charge_doub_55rt_mean, charge_doub_6rt_mean,
-               charge_doub_40ns_mean, charge_doub_80ns_mean, fwhm_doub_no_delay_mean, fwhm_doub_05rt_mean,
-               fwhm_doub_1rt_mean, fwhm_doub_15rt_mean, fwhm_doub_2rt_mean, fwhm_doub_25rt_mean, fwhm_doub_3rt_mean,
-               fwhm_doub_35rt_mean, fwhm_doub_4rt_mean, fwhm_doub_45rt_mean, fwhm_doub_5rt_mean, fwhm_doub_55rt_mean,
-               fwhm_doub_6rt_mean, fwhm_doub_40ns_mean, fwhm_doub_80ns_mean, amp_sing_std, charge_sing_std,
-               fwhm_sing_std, amp_doub_no_delay_std, amp_doub_05rt_std, amp_doub_1rt_std, amp_doub_15rt_std,
-               amp_doub_2rt_std, amp_doub_25rt_std, amp_doub_3rt_std, amp_doub_35rt_std, amp_doub_4rt_std,
-               amp_doub_45rt_std, amp_doub_5rt_std, amp_doub_55rt_std, amp_doub_6rt_std, amp_doub_40ns_std,
-               amp_doub_80ns_std, charge_doub_no_delay_std, charge_doub_05rt_std, charge_doub_1rt_std,
-               charge_doub_15rt_std, charge_doub_2rt_std, charge_doub_25rt_std, charge_doub_3rt_std,
-               charge_doub_35rt_std, charge_doub_4rt_std, charge_doub_45rt_std, charge_doub_5rt_std,
-               charge_doub_55rt_std, charge_doub_6rt_std, charge_doub_40ns_std, charge_doub_80ns_std,
-               fwhm_doub_no_delay_std, fwhm_doub_05rt_std, fwhm_doub_1rt_std, fwhm_doub_15rt_std, fwhm_doub_2rt_std,
-               fwhm_doub_25rt_std, fwhm_doub_3rt_std, fwhm_doub_35rt_std, fwhm_doub_4rt_std, fwhm_doub_45rt_std,
-               fwhm_doub_5rt_std, fwhm_doub_55rt_std, fwhm_doub_6rt_std, fwhm_doub_40ns_std, fwhm_doub_80ns_std,
-               shaping, fsps_new, dest_path):
+def make_plots(amp_sing_mean, charge_sing_mean, fwhm_sing_mean, amp_doub_no_delay_mean, charge_doub_no_delay_mean,
+               fwhm_doub_no_delay_mean, fwhm_doub_05rt_mean, fwhm_doub_1rt_mean, fwhm_doub_15rt_mean,
+               fwhm_doub_2rt_mean, fwhm_doub_25rt_mean, fwhm_doub_3rt_mean, fwhm_doub_35rt_mean, fwhm_doub_4rt_mean,
+               fwhm_doub_45rt_mean, fwhm_doub_5rt_mean, fwhm_doub_55rt_mean, fwhm_doub_6rt_mean, fwhm_doub_40ns_mean,
+               fwhm_doub_80ns_mean, amp_sing_std, charge_sing_std, fwhm_sing_std, amp_doub_no_delay_std,
+               charge_doub_no_delay_std, fwhm_doub_no_delay_std, fwhm_doub_05rt_std, fwhm_doub_1rt_std,
+               fwhm_doub_15rt_std, fwhm_doub_2rt_std, fwhm_doub_25rt_std, fwhm_doub_3rt_std, fwhm_doub_35rt_std,
+               fwhm_doub_4rt_std, fwhm_doub_45rt_std, fwhm_doub_5rt_std, fwhm_doub_55rt_std, fwhm_doub_6rt_std,
+               fwhm_doub_40ns_std, fwhm_doub_80ns_std, shaping, fsps_new, dest_path):
     print('Making plots...')
 
     if shaping == 'rt_1':
