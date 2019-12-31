@@ -1266,8 +1266,6 @@ def make_arrays_s(save_shift, dest_path, array, nhdr, r, fsps_new, shaping):
         file_name2 = str(dest_path / 'calculations_single' / str(str(int(fsps_new / 1e6)) + '_Msps') / shaping /
                          'D3--waveforms--%05d.txt') % item
 
-        ''' and not os.path.isfile(str(dest_path / 'unusable_data' /
-                                                                 'D3--waveforms--%05d.txt') % item)'''
         if os.path.isfile(file_name1):
             # If the calculations were done previously, they are read from a file
             if os.path.isfile(file_name2):
@@ -1303,8 +1301,6 @@ def make_arrays_d(save_shift, dest_path, delay_folder, array, nhdr, r, fsps_new,
         file_name2 = str(dest_path / 'calculations_double' / str(str(int(fsps_new / 1e6)) + '_Msps') / delay_folder /
                          shaping / 'D3--waveforms--%s.txt') % item
 
-        ''' and not os.path.isfile(str(dest_path / 'unusable_data' /
-                                                                 'D3--waveforms--%s.txt') % item)'''
         if os.path.isfile(file_name1):
             # If the calculations were done previously, they are read from a file
             if os.path.isfile(file_name2):
