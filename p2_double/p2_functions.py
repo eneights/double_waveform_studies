@@ -644,14 +644,14 @@ def add_spe(single_file_array, double_file_array, delay, delay_path1, nloops, si
 # Creates set of single spe files to compare to doubles
 def single_set(single_file_array, single_file_array2, nloops, single_path, filt_path1_s, nhdr):
     if len(single_file_array2) < nloops:
-        file = single_file_array[np.random.randint(len(single_file_array))]
-        file_num = '%05d' % file
+        filename = single_file_array[np.random.randint(len(single_file_array))]
+        file_num = '%05d' % filename
 
         if not os.path.isfile(filt_path1_s / str('D2--waveforms--%05d.txt' % file_num)):
             single_file_array2 = np.append(single_file_array2, file_num)
             t, v, hdr = rw(str(single_path / 'D2--waveforms--%05d.txt') % file_num, nhdr)
             ww(t, v, str(filt_path1_s / 'D2--waveforms--%05d.txt') % file_num, hdr)
-            print('File #%05d added' % file)
+            print('File #%05d added' % filename)
 
     return single_file_array2
 
@@ -683,6 +683,7 @@ def shaping(save_name1, save_name2, save_name4, save_name8, item, fsps, nhdr):
     else:
         if os.path.isfile(save_name2):
             t2, v2, hdr = rw(save_name2, nhdr)
+            v2 = v2 / factor2
             v4 = lowpass_filter(v2, tau_4, fsps)
             v4_gain = v4 * factor4
             t4 = t2
@@ -696,6 +697,7 @@ def shaping(save_name1, save_name2, save_name4, save_name8, item, fsps, nhdr):
     else:
         if os.path.isfile(save_name4):
             t4, v4, hdr = rw(save_name4, nhdr)
+            v4 = v4 / factor4
             v8 = lowpass_filter(v4, tau_8, fsps)
             v8_gain = v8 * factor8
             t8 = t4
