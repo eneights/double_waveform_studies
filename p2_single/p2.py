@@ -55,11 +55,12 @@ def p2(start, end, date, date_time, filter_band, nhdr, fsps, r, pmt_hv, gain, of
 
     # Calculates 10-90 rise times for each waveform and puts them into arrays
     print('Doing calculations...')
-    rt_1_array, rt_2_array, rt_4_array, rt_8_array = make_arrays(filt_path1, filt_path2, filt_path4, filt_path8,
-                                                                 dest_path, start, end, nhdr)
+    rt_1_array, rt_2_array, rt_4_array, rt_8_array, amp_1_array, amp_2_array, amp_4_array, amp_8_array = \
+        make_arrays(filt_path1, filt_path2, filt_path4, filt_path8, dest_path, start, end, nhdr)
 
     # Creates histograms of 10-90 rise times for 1x, 2x, 4x, and 8x the initial rise time
-    p2_hist(rt_1_array, rt_2_array, rt_4_array, rt_8_array, dest_path, 100)
+    p2_hist(rt_1_array, rt_2_array, rt_4_array, rt_8_array, amp_1_array, amp_2_array, amp_4_array, amp_8_array,
+            dest_path, 100)
 
     # Writes info file
     info_file(date_time, data_path, dest_path, pmt_hv, gain, offset, trig_delay, amp, fsps, band, nfilter, r)

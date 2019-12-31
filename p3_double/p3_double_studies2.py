@@ -60,7 +60,7 @@ if __name__ == '__main__':
                         default='full_bdw_no_nf')
     parser.add_argument("--fsps_new", type=float, help='new samples per second (Hz) (default=500000000.)',
                         default=500000000.)
-    parser.add_argument("--shaping", type=str, help='shaping amount (default=rt1)', default='rt_1')
+    parser.add_argument("--shaping", type=str, help='shaping amount (default=rt_1)', default='rt_1')
     args = parser.parse_args()
 
     double_spe_studies_2(args.date, args.fil_band, args.fsps_new, args.shaping)

@@ -47,13 +47,17 @@ def ww(x, y, file_name, hdr):
 
 
 # Creates text file with rise times at each shaping
-def save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8):
+def save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8, amp_1, amp_2, amp_4, amp_8):
     file_name = str(dest_path / 'calculations_single' / 'D2--waveforms--%05d.txt') % i
     myfile = open(file_name, 'w')
     myfile.write('risetime_1,' + str(risetime_1))
     myfile.write('\nrisetime_2,' + str(risetime_2))
     myfile.write('\nrisetime_4,' + str(risetime_4))
     myfile.write('\nrisetime_8,' + str(risetime_8))
+    myfile.write('\namp_1,' + str(amp_1))
+    myfile.write('\namp_2,' + str(amp_2))
+    myfile.write('\namp_4,' + str(amp_4))
+    myfile.write('\namp_8,' + str(amp_8))
     myfile.close()
 
 
@@ -69,8 +73,12 @@ def read_calc(filename):
     risetime_2 = file_array[1]
     risetime_4 = file_array[2]
     risetime_8 = file_array[3]
+    amp_1 = file_array[4]
+    amp_2 = file_array[5]
+    amp_4 = file_array[6]
+    amp_8 = file_array[7]
 
-    return risetime_1, risetime_2, risetime_4, risetime_8
+    return risetime_1, risetime_2, risetime_4, risetime_8, amp_1, amp_2, amp_4, amp_8
 
 
 # Creates text file with data from an array
@@ -350,12 +358,24 @@ def rise_time(t, v, low, high):
     return risetime
 
 
-# Calculates 10-90 rise time for each shaping and returns arrays of 10-90 rise times
+# Returns the amplitude of spe as a positive value (minimum voltage)
+def calculate_amp(t, v):
+    avg = calculate_average(t, v)       # Calculates value of baseline voltage
+    amp = avg - np.amin(v)              # Calculates max amplitude
+
+    return amp
+
+
+# Calculates 10-90 rise time and amplitude for each shaping and returns arrays of 10-90 rise times and amplitudes
 def make_arrays(filt_path1, filt_path2, filt_path4, filt_path8, dest_path, start, end, nhdr):
     rt_1_array = np.array([])
     rt_2_array = np.array([])
     rt_4_array = np.array([])
     rt_8_array = np.array([])
+    amp_1_array = np.array([])
+    amp_2_array = np.array([])
+    amp_4_array = np.array([])
+    amp_8_array = np.array([])
 
     for i in range(start, end + 1):
         file_name1 = str(filt_path1 / 'D2--waveforms--%05d.txt') % i
@@ -367,12 +387,16 @@ def make_arrays(filt_path1, filt_path2, filt_path4, filt_path8, dest_path, start
         # If the calculations were done previously, they are read from a file
         if os.path.isfile(file_name5):
             print("Reading calculations from file #%05d" % i)
-            risetime_1, risetime_2, risetime_4, risetime_8 = read_calc(file_name5)
+            risetime_1, risetime_2, risetime_4, risetime_8, amp_1, amp_2, amp_4, amp_8 = read_calc(file_name5)
 
             rt_1_array = np.append(rt_1_array, risetime_1)
             rt_2_array = np.append(rt_2_array, risetime_2)
             rt_4_array = np.append(rt_4_array, risetime_4)
             rt_8_array = np.append(rt_8_array, risetime_8)
+            amp_1_array = np.append(amp_1_array, amp_1)
+            amp_2_array = np.append(amp_2_array, amp_2)
+            amp_4_array = np.append(amp_4_array, amp_4)
+            amp_8_array = np.append(amp_8_array, amp_8)
         # If the calculations were not done yet, they are calculated
         else:
             if os.path.isfile(file_name1):
@@ -385,14 +409,23 @@ def make_arrays(filt_path1, filt_path2, filt_path4, filt_path8, dest_path, start
                 risetime_2 = rise_time(t2, v2, 10, 90)      # Rise time calculation is done
                 risetime_4 = rise_time(t4, v4, 10, 90)      # Rise time calculation is done
                 risetime_8 = rise_time(t8, v8, 10, 90)      # Rise time calculation is done
-                save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8)
+                amp_1 = calculate_amp(t1, v1)
+                amp_2 = calculate_amp(t2, v2)
+                amp_4 = calculate_amp(t4, v4)
+                amp_8 = calculate_amp(t8, v8)
+                save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8, amp_1, amp_2, amp_4,
+                                  amp_8)
 
                 rt_1_array = np.append(rt_1_array, risetime_1)
                 rt_2_array = np.append(rt_2_array, risetime_2)
                 rt_4_array = np.append(rt_4_array, risetime_4)
                 rt_8_array = np.append(rt_8_array, risetime_8)
+                amp_1_array = np.append(amp_1_array, amp_1)
+                amp_2_array = np.append(amp_2_array, amp_2)
+                amp_4_array = np.append(amp_4_array, amp_4)
+                amp_8_array = np.append(amp_8_array, amp_8)
 
-    return rt_1_array, rt_2_array, rt_4_array, rt_8_array
+    return rt_1_array, rt_2_array, rt_4_array, rt_8_array, amp_1_array, amp_2_array, amp_4_array, amp_8_array
 
 
 # HISTOGRAMS
@@ -451,12 +484,17 @@ def plot_histogram(array, dest_path, nbins, xaxis, title, units, filename):
 
 
 # Plots histograms for each calculation array
-def p2_hist(rt_1_array, rt_2_array, rt_4_array, rt_8_array, dest_path, bins):
+def p2_hist(rt_1_array, rt_2_array, rt_4_array, rt_8_array, amp_1_array, amp_2_array, amp_4_array, amp_8_array,
+            dest_path, bins):
     print('Creating histograms...')
     plot_histogram(rt_1_array, dest_path, bins, 'Time', '10-90 Rise Time (No Shaping)', 's', 'rt_1_single')
     plot_histogram(rt_2_array, dest_path, bins, 'Time', '10-90 Rise Time (2x Shaping)', 's', 'rt_2_single')
     plot_histogram(rt_4_array, dest_path, bins, 'Time', '10-90 Rise Time (4x Shaping)', 's', 'rt_4_single')
     plot_histogram(rt_8_array, dest_path, bins, 'Time', '10-90 Rise Time (8x Shaping)', 's', 'rt_8_single')
+    plot_histogram(amp_1_array, dest_path, bins, 'Voltage', 'Amplitude (No Shaping)', 'V', 'amp_1_single')
+    plot_histogram(amp_2_array, dest_path, bins, 'Voltage', 'Amplitude (2x Shaping)', 'V', 'amp_2_single')
+    plot_histogram(amp_4_array, dest_path, bins, 'Voltage', 'Amplitude (4x Shaping)', 'V', 'amp_4_single')
+    plot_histogram(amp_8_array, dest_path, bins, 'Voltage', 'Amplitude (8x Shaping)', 'V', 'amp_8_single')
 
 
 # P2
@@ -547,7 +585,7 @@ def avg_shapings(average_file, dest_path, v_gain, v2_gain, v4_gain, v8_gain, tau
 
 # Calculates and saves waveforms with 1x, 2x, 4x, and 8x the rise time
 def do_shaping(save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, tau_8, factor2, factor4,
-            factor8, fsps, nhdr):
+               factor8, fsps, nhdr):
     if os.path.isfile(save_name2):
         print('File #%05d in rt_2 folder' % i)
     else:
@@ -566,6 +604,7 @@ def do_shaping(save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, 
     else:
         if os.path.isfile(save_name2):
             t2, v2, hdr = rw(save_name2, nhdr)
+            v2 = v2 / factor2
             v4 = lowpass_filter(v2, tau_4, fsps)
             v4_gain = v4 * factor4
             t4 = t2
@@ -579,6 +618,7 @@ def do_shaping(save_name1, save_name2, save_name4, save_name8, i, tau_2, tau_4, 
     else:
         if os.path.isfile(save_name4):
             t4, v4, hdr = rw(save_name4, nhdr)
+            v4 = v4 / factor4
             v8 = lowpass_filter(v4, tau_8, fsps)
             v8_gain = v8 * factor8
             t8 = t4
