@@ -100,6 +100,20 @@ def check_if_file(path, file_name):
         return 'no'
 
 
+# Removes single spe waveform from all spe folders
+def remove_spe(dest_path, number, nhdr):
+    t, v, hdr = rw(str(Path(dest_path / 'rt_1_single') / 'D2--waveforms--%05d.txt') % number, nhdr)
+    ww(t, v, str(dest_path / 'unusable_data' / 'D2--waveforms--%05d.txt') % number, hdr)
+    if os.path.isfile(str(Path(dest_path / 'rt_2_single') / 'D2--waveforms--%05d.txt') % number):
+        os.remove(str(Path(dest_path / 'rt_2_single') / 'D2--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(Path(dest_path / 'rt_4_single') / 'D2--waveforms--%05d.txt') % number):
+        os.remove(str(Path(dest_path / 'rt_4_single') / 'D2--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(Path(dest_path / 'rt_8_single') / 'D2--waveforms--%05d.txt') % number):
+        os.remove(str(Path(dest_path / 'rt_8_single') / 'D2--waveforms--%05d.txt') % number)
+    if os.path.isfile(str(Path(dest_path / 'calculations_single') / 'D2--waveforms--%05d.txt') % number):
+        os.remove(str(Path(dest_path / 'calculations_single') / 'D2--waveforms--%05d.txt') % number)
+
+
 # Creates info file
 def info_file(acq_date_time, source_path, dest_path, pmt_hv, gain, offset, trig_delay, amp, fsps, band, nfilter, r):
     now = datetime.datetime.now()
@@ -366,6 +380,16 @@ def calculate_amp(t, v):
     return amp
 
 
+# Checks if calculated values are possible or not
+def check_if_impossible(risetime_1, risetime_2, risetime_4, risetime_8, amp_1, amp_2, amp_4, amp_8):
+    if (risetime_1 == np.inf or risetime_2 == np.inf or risetime_4 == np.inf or risetime_8 == np.inf or amp_1 == np.inf
+            or amp_2 == np.inf or amp_4 == np.inf or amp_8 == np.inf or risetime_1 <= 0 or risetime_2 <= 0 or risetime_4
+            <= 0 or risetime_8 <= 0 or amp_1 <= 0 or amp_2 <= 0 or amp_4 <= 0 or amp_8 <= 0):
+        return 'impossible'
+    else:
+        return 'ok'
+
+
 # Calculates 10-90 rise time and amplitude for each shaping and returns arrays of 10-90 rise times and amplitudes
 def make_arrays(filt_path1, filt_path2, filt_path4, filt_path8, dest_path, start, end, nhdr):
     rt_1_array = np.array([])
@@ -384,38 +408,38 @@ def make_arrays(filt_path1, filt_path2, filt_path4, filt_path8, dest_path, start
         file_name4 = str(filt_path8 / 'D2--waveforms--%05d.txt') % i
         file_name5 = str(dest_path / 'calculations_single' / 'D2--waveforms--%05d.txt') % i
 
-        # If the calculations were done previously, they are read from a file
-        if os.path.isfile(file_name5):
-            print("Reading calculations from file #%05d" % i)
-            risetime_1, risetime_2, risetime_4, risetime_8, amp_1, amp_2, amp_4, amp_8 = read_calc(file_name5)
+        if os.path.isfile(file_name1):
+            # If the calculations were done previously, they are read from a file
+            if os.path.isfile(file_name5):
+                print("Reading calculations from file #%05d" % i)
+                risetime_1, risetime_2, risetime_4, risetime_8, amp_1, amp_2, amp_4, amp_8 = read_calc(file_name5)
 
-            rt_1_array = np.append(rt_1_array, risetime_1)
-            rt_2_array = np.append(rt_2_array, risetime_2)
-            rt_4_array = np.append(rt_4_array, risetime_4)
-            rt_8_array = np.append(rt_8_array, risetime_8)
-            amp_1_array = np.append(amp_1_array, amp_1)
-            amp_2_array = np.append(amp_2_array, amp_2)
-            amp_4_array = np.append(amp_4_array, amp_4)
-            amp_8_array = np.append(amp_8_array, amp_8)
-        # If the calculations were not done yet, they are calculated
-        else:
-            if os.path.isfile(file_name1):
+            # If the calculations were not done yet, they are calculated
+            else:
                 print("Calculating file #%05d" % i)
-                t1, v1, hdr = rw(file_name1, nhdr)          # Unshaped waveform file is read
-                t2, v2, hdr = rw(file_name2, nhdr)          # 2x rise time waveform file is read
-                t4, v4, hdr = rw(file_name3, nhdr)          # 4x rise time waveform file is read
-                t8, v8, hdr = rw(file_name4, nhdr)          # 8x rise time waveform file is read
-                risetime_1 = rise_time(t1, v1, 10, 90)      # Rise time calculation is done
-                risetime_2 = rise_time(t2, v2, 10, 90)      # Rise time calculation is done
-                risetime_4 = rise_time(t4, v4, 10, 90)      # Rise time calculation is done
-                risetime_8 = rise_time(t8, v8, 10, 90)      # Rise time calculation is done
+                t1, v1, hdr = rw(file_name1, nhdr)  # Unshaped waveform file is read
+                t2, v2, hdr = rw(file_name2, nhdr)  # 2x rise time waveform file is read
+                t4, v4, hdr = rw(file_name3, nhdr)  # 4x rise time waveform file is read
+                t8, v8, hdr = rw(file_name4, nhdr)  # 8x rise time waveform file is read
+                risetime_1 = rise_time(t1, v1, 10, 90)  # Rise time calculation is done
+                risetime_2 = rise_time(t2, v2, 10, 90)  # Rise time calculation is done
+                risetime_4 = rise_time(t4, v4, 10, 90)  # Rise time calculation is done
+                risetime_8 = rise_time(t8, v8, 10, 90)  # Rise time calculation is done
                 amp_1 = calculate_amp(t1, v1)
                 amp_2 = calculate_amp(t2, v2)
                 amp_4 = calculate_amp(t4, v4)
                 amp_8 = calculate_amp(t8, v8)
-                save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8, amp_1, amp_2, amp_4,
-                                  amp_8)
 
+            possibility = check_if_impossible(risetime_1, risetime_2, risetime_4, risetime_8, amp_1, amp_2, amp_4,
+                                              amp_8)
+
+            # Any spe waveform that returns impossible values is put into the not_spe folder
+            if possibility == 'impossible':
+                print('Removing file #%05d' % i)
+                remove_spe(dest_path, i, nhdr)
+
+            # All other spe waveforms' calculations are placed into arrays
+            else:
                 rt_1_array = np.append(rt_1_array, risetime_1)
                 rt_2_array = np.append(rt_2_array, risetime_2)
                 rt_4_array = np.append(rt_4_array, risetime_4)
@@ -424,6 +448,9 @@ def make_arrays(filt_path1, filt_path2, filt_path4, filt_path8, dest_path, start
                 amp_2_array = np.append(amp_2_array, amp_2)
                 amp_4_array = np.append(amp_4_array, amp_4)
                 amp_8_array = np.append(amp_8_array, amp_8)
+                if not os.path.isfile(file_name5):
+                    save_calculations(dest_path, i, risetime_1, risetime_2, risetime_4, risetime_8, amp_1, amp_2, amp_4,
+                                      amp_8)
 
     return rt_1_array, rt_2_array, rt_4_array, rt_8_array, amp_1_array, amp_2_array, amp_4_array, amp_8_array
 
