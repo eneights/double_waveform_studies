@@ -29,35 +29,35 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="62" />
+          <entry key="py" value="64" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Python" value="62" />
+          <entry key="Python" value="64" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="dummy" value="3" />
-          <entry key="py" value="22660" />
+          <entry key="py" value="22663" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="PLAIN_TEXT" value="3" />
-          <entry key="Python" value="22660" />
+          <entry key="Python" value="22663" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../p3_double/p3_double_studies.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="705">
-              <caret line="47" column="49" selection-start-line="47" selection-start-column="49" selection-end-line="47" selection-end-column="49" />
+            <state relative-caret-position="532">
+              <caret line="66" column="100" lean-forward="true" selection-start-line="66" selection-start-column="100" selection-end-line="66" selection-end-column="100" />
             </state>
           </provider>
         </entry>
@@ -65,7 +65,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../p3_double/p3_functions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="587">
+            <state relative-caret-position="16455">
               <caret line="1144" column="58" lean-forward="true" selection-start-line="1144" selection-start-column="58" selection-end-line="1144" selection-end-column="58" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
@@ -77,28 +77,10 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../p2_single/p2.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="443">
-              <caret line="58" column="96" selection-start-line="58" selection-start-column="96" selection-end-line="58" selection-end-column="96" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/../p2_single/p2_functions.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="370">
-              <caret line="386" column="93" lean-forward="true" selection-start-line="386" selection-start-column="93" selection-end-line="386" selection-end-column="93" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../p2_double/p2_functions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="924">
-              <caret line="656" lean-forward="true" selection-start-line="656" selection-end-line="656" />
+            <state relative-caret-position="166">
+              <caret line="418" column="81" selection-start-line="418" selection-start-column="81" selection-end-line="418" selection-end-column="81" />
             </state>
           </provider>
         </entry>
@@ -177,12 +159,12 @@
         <option value="$PROJECT_DIR$/../p3_single/p3_functions.py" />
         <option value="$PROJECT_DIR$/../p2_double/p2_create_double.py" />
         <option value="$PROJECT_DIR$/../../../../Classes/Astro 320/Python/chi_squared.py" />
-        <option value="$PROJECT_DIR$/../p3_double/p3_double_studies.py" />
         <option value="$PROJECT_DIR$/../p3_double/p3_functions.py" />
         <option value="$PROJECT_DIR$/../p3_double/p3_double_studies2.py" />
-        <option value="$PROJECT_DIR$/../p2_double/p2_functions.py" />
         <option value="$PROJECT_DIR$/../p2_single/p2.py" />
         <option value="$PROJECT_DIR$/../p2_single/p2_functions.py" />
+        <option value="$PROJECT_DIR$/../p2_double/p2_functions.py" />
+        <option value="$PROJECT_DIR$/../p3_double/p3_double_studies.py" />
       </list>
     </option>
   </component>
@@ -397,17 +379,24 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../p3_single/p3_functions.py">
+    <entry file="file://$PROJECT_DIR$/../p2_double/p2_create_double.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="281">
-          <caret line="327" column="94" lean-forward="true" selection-start-line="327" selection-start-column="94" selection-end-line="327" selection-end-column="94" />
+        <state relative-caret-position="175">
+          <caret line="28" column="60" selection-start-line="28" selection-start-column="60" selection-end-line="28" selection-end-column="60" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../p3_double/p3_double_studies.py">
+    <entry file="file://$PROJECT_DIR$/../p2_single/p2_functions.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="705">
-          <caret line="47" column="49" selection-start-line="47" selection-start-column="49" selection-end-line="47" selection-end-column="49" />
+        <state relative-caret-position="399">
+          <caret line="386" column="93" lean-forward="true" selection-start-line="386" selection-start-column="93" selection-end-line="386" selection-end-column="93" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../p2_double/p2_functions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="166">
+          <caret line="418" column="81" selection-start-line="418" selection-start-column="81" selection-end-line="418" selection-end-column="81" />
         </state>
       </provider>
     </entry>
@@ -418,30 +407,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../p2_double/p2_create_double.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="175">
-          <caret line="28" column="60" selection-start-line="28" selection-start-column="60" selection-end-line="28" selection-end-column="60" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../p3_single/p3.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="60">
-          <caret line="4" column="11" selection-start-line="4" selection-start-column="11" selection-end-line="4" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../p2_double/p2_functions.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="924">
-          <caret line="656" lean-forward="true" selection-start-line="656" selection-end-line="656" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../p3_double/p3_functions.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="587">
+        <state relative-caret-position="16455">
           <caret line="1144" column="58" lean-forward="true" selection-start-line="1144" selection-start-column="58" selection-end-line="1144" selection-end-column="58" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
@@ -458,10 +426,24 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../p2_single/p2_functions.py">
+    <entry file="file://$PROJECT_DIR$/../p3_single/p3_functions.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="370">
-          <caret line="386" column="93" lean-forward="true" selection-start-line="386" selection-start-column="93" selection-end-line="386" selection-end-column="93" />
+        <state relative-caret-position="3491">
+          <caret line="327" column="94" lean-forward="true" selection-start-line="327" selection-start-column="94" selection-end-line="327" selection-end-column="94" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../p3_single/p3.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="4" column="11" selection-start-line="4" selection-start-column="11" selection-end-line="4" selection-end-column="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../p3_double/p3_double_studies.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="532">
+          <caret line="66" column="100" lean-forward="true" selection-start-line="66" selection-start-column="100" selection-end-line="66" selection-end-column="100" />
         </state>
       </provider>
     </entry>
