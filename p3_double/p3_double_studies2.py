@@ -31,15 +31,16 @@ def double_spe_studies_2(date, filter_band, fsps_new, shaping):
     charge_doub_40ns_std, charge_doub_80ns_std, fwhm_doub_no_delay_std, fwhm_doub_05rt_std, fwhm_doub_1rt_std, \
     fwhm_doub_15rt_std, fwhm_doub_2rt_std, fwhm_doub_25rt_std, fwhm_doub_3rt_std, fwhm_doub_35rt_std, \
     fwhm_doub_4rt_std, fwhm_doub_45rt_std, fwhm_doub_5rt_std, fwhm_doub_55rt_std, fwhm_doub_6rt_std, \
-    fwhm_doub_40ns_std, fwhm_doub_80ns_std\
+    fwhm_doub_40ns_std, fwhm_doub_80ns_std \
         = hist_data(amp_sing, charge_sing, fwhm_sing, amp_doub_no_delay, amp_doub_05rt, amp_doub_1rt, amp_doub_15rt,
-                amp_doub_2rt, amp_doub_25rt, amp_doub_3rt, amp_doub_35rt, amp_doub_4rt, amp_doub_45rt, amp_doub_5rt,
-                amp_doub_55rt, amp_doub_6rt, amp_doub_40ns, amp_doub_80ns, charge_doub_no_delay, charge_doub_05rt,
-                charge_doub_1rt, charge_doub_15rt, charge_doub_2rt, charge_doub_25rt, charge_doub_3rt, charge_doub_35rt,
-                charge_doub_4rt, charge_doub_45rt, charge_doub_5rt, charge_doub_55rt, charge_doub_6rt, charge_doub_40ns,
-                charge_doub_80ns, fwhm_doub_no_delay, fwhm_doub_05rt, fwhm_doub_1rt, fwhm_doub_15rt, fwhm_doub_2rt,
-                fwhm_doub_25rt, fwhm_doub_3rt, fwhm_doub_35rt, fwhm_doub_4rt, fwhm_doub_45rt, fwhm_doub_5rt,
-                fwhm_doub_55rt, fwhm_doub_6rt, fwhm_doub_40ns, fwhm_doub_80ns, fsps_new)
+                    amp_doub_2rt, amp_doub_25rt, amp_doub_3rt, amp_doub_35rt, amp_doub_4rt, amp_doub_45rt, amp_doub_5rt,
+                    amp_doub_55rt, amp_doub_6rt, amp_doub_40ns, amp_doub_80ns, charge_doub_no_delay, charge_doub_05rt,
+                    charge_doub_1rt, charge_doub_15rt, charge_doub_2rt, charge_doub_25rt, charge_doub_3rt,
+                    charge_doub_35rt, charge_doub_4rt, charge_doub_45rt, charge_doub_5rt, charge_doub_55rt,
+                    charge_doub_6rt, charge_doub_40ns, charge_doub_80ns, fwhm_doub_no_delay, fwhm_doub_05rt,
+                    fwhm_doub_1rt, fwhm_doub_15rt, fwhm_doub_2rt, fwhm_doub_25rt, fwhm_doub_3rt, fwhm_doub_35rt,
+                    fwhm_doub_4rt, fwhm_doub_45rt, fwhm_doub_5rt, fwhm_doub_55rt, fwhm_doub_6rt, fwhm_doub_40ns,
+                    fwhm_doub_80ns, fsps_new)
 
     make_plots(amp_sing_mean, charge_sing_mean, fwhm_sing_mean, amp_doub_no_delay_mean, charge_doub_no_delay_mean,
                fwhm_doub_no_delay_mean, fwhm_doub_05rt_mean, fwhm_doub_1rt_mean, fwhm_doub_15rt_mean,
