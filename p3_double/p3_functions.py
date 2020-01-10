@@ -1244,6 +1244,10 @@ def create_arrays_d(calc_file, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_
         remove_spe_d(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_8_path_dig, rt_1_path_dow,
                      rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, delay_folder, shaping,
                      fsps_new)
+        
+    elif possibility == 'impossible' and shaping == 'rt_8':
+        if not os.path.isfile(calc_file):
+            save_calculations_d(dest_path, delay_folder, number, t1, t2, charge, amplitude, fwhm, shaping, fsps_new)
 
     # All other spe waveforms' calculations are placed into arrays
     else:

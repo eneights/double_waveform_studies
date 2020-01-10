@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b6d0dd9b-32b2-4a53-b209-2297dc882a2e" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../p3_double/p3_double_studies2.py" beforeDir="false" afterPath="$PROJECT_DIR$/../p3_double/p3_double_studies2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../p3_double/p3_functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/../p3_double/p3_functions.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -40,13 +39,13 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="dummy" value="3" />
-          <entry key="py" value="23083" />
+          <entry key="py" value="23095" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="PLAIN_TEXT" value="3" />
-          <entry key="Python" value="23083" />
+          <entry key="Python" value="23095" />
         </counts>
       </usages-collector>
     </session>
@@ -56,7 +55,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../p3_double/p3_double_studies.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="30">
+            <state relative-caret-position="-186">
               <caret line="2" lean-forward="true" selection-start-line="2" selection-end-line="2" />
             </state>
           </provider>
@@ -65,13 +64,13 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../p3_double/p3_double_studies2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="795">
+            <state relative-caret-position="501">
               <caret line="53" lean-forward="true" selection-start-line="53" selection-end-line="53" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../p3_double/p3_double_studies3.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="120">
@@ -80,15 +79,15 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../p3_double/p3_functions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="17025">
-              <caret line="1144" column="58" selection-start-line="1144" selection-start-column="58" selection-end-line="1144" selection-end-column="58" />
+            <state relative-caret-position="374">
+              <caret line="1246" column="8" selection-start-line="1246" selection-start-column="8" selection-end-line="1246" selection-end-column="8" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
-                <marker date="1577518213438" expanded="true" signature="13411:13833" ph="..." />
-                <marker date="1577518213438" expanded="true" signature="14414:17563" ph="..." />
+                <marker date="1578699132291" expanded="true" signature="13411:13833" ph="..." />
+                <marker date="1578699132291" expanded="true" signature="14414:17563" ph="..." />
               </folding>
             </state>
           </provider>
@@ -168,13 +167,13 @@
         <option value="$PROJECT_DIR$/../p3_single/p3_functions.py" />
         <option value="$PROJECT_DIR$/../p2_double/p2_create_double.py" />
         <option value="$PROJECT_DIR$/../../../../Classes/Astro 320/Python/chi_squared.py" />
-        <option value="$PROJECT_DIR$/../p3_double/p3_functions.py" />
         <option value="$PROJECT_DIR$/../p2_single/p2.py" />
         <option value="$PROJECT_DIR$/../p2_single/p2_functions.py" />
         <option value="$PROJECT_DIR$/../p2_double/p2_functions.py" />
         <option value="$PROJECT_DIR$/../p3_double/p3_double_studies.py" />
         <option value="$PROJECT_DIR$/../p3_double/p3_double_studies2.py" />
         <option value="$PROJECT_DIR$/../p3_double/p3_double_studies3.py" />
+        <option value="$PROJECT_DIR$/../p3_double/p3_functions.py" />
       </list>
     </option>
   </component>
@@ -417,18 +416,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../p3_double/p3_functions.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17025">
-          <caret line="1144" column="58" selection-start-line="1144" selection-start-column="58" selection-end-line="1144" selection-end-column="58" />
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-            <marker date="1577518213438" expanded="true" signature="13411:13833" ph="..." />
-            <marker date="1577518213438" expanded="true" signature="14414:17563" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../p2_double/p2_functions.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="6165">
@@ -443,17 +430,17 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../p3_double/p3_double_studies.py">
+    <entry file="file://$PROJECT_DIR$/../p3_double/p3_double_studies2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="30">
-          <caret line="2" lean-forward="true" selection-start-line="2" selection-end-line="2" />
+        <state relative-caret-position="501">
+          <caret line="53" lean-forward="true" selection-start-line="53" selection-end-line="53" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../p3_double/p3_double_studies2.py">
+    <entry file="file://$PROJECT_DIR$/../p3_double/p3_double_studies.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="795">
-          <caret line="53" lean-forward="true" selection-start-line="53" selection-end-line="53" />
+        <state relative-caret-position="-186">
+          <caret line="2" lean-forward="true" selection-start-line="2" selection-end-line="2" />
         </state>
       </provider>
     </entry>
@@ -461,6 +448,18 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
           <caret line="8" lean-forward="true" selection-start-line="8" selection-end-line="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../p3_double/p3_functions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="374">
+          <caret line="1246" column="8" selection-start-line="1246" selection-start-column="8" selection-end-line="1246" selection-end-column="8" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+            <marker date="1578699132291" expanded="true" signature="13411:13833" ph="..." />
+            <marker date="1578699132291" expanded="true" signature="14414:17563" ph="..." />
+          </folding>
         </state>
       </provider>
     </entry>
