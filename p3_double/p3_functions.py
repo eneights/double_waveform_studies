@@ -164,7 +164,7 @@ def write_hist_data_d(array, dest_path, name):
     myfile.close()
 
 
-def read_hist_file(filename, fsps_new):
+def read_hist_file(filename):
     array = np.array([])
 
     myfile = open(filename, 'r')                # Opens file
@@ -1244,7 +1244,7 @@ def create_arrays_d(calc_file, rt_1_path, rt_2_path, rt_4_path, rt_8_path, dest_
         remove_spe_d(rt_1_path_raw, rt_1_path_dig, rt_2_path_dig, rt_4_path_dig, rt_8_path_dig, rt_1_path_dow,
                      rt_2_path_dow, rt_4_path_dow, rt_8_path_dow, dest_path, number, nhdr, delay_folder, shaping,
                      fsps_new)
-        
+
     elif possibility == 'impossible' and shaping == 'rt_8':
         if not os.path.isfile(calc_file):
             save_calculations_d(dest_path, delay_folder, number, t1, t2, charge, amplitude, fwhm, shaping, fsps_new)
@@ -1461,55 +1461,55 @@ def hist_data(amp_sing, charge_sing, fwhm_sing, amp_doub_no_delay, amp_doub_05rt
                 charge_doub_4rt, charge_doub_45rt, charge_doub_5rt, charge_doub_55rt, charge_doub_6rt, charge_doub_40ns,
                 charge_doub_80ns, fwhm_doub_no_delay, fwhm_doub_05rt, fwhm_doub_1rt, fwhm_doub_15rt, fwhm_doub_2rt,
                 fwhm_doub_25rt, fwhm_doub_3rt, fwhm_doub_35rt, fwhm_doub_4rt, fwhm_doub_45rt, fwhm_doub_5rt,
-                fwhm_doub_55rt, fwhm_doub_6rt, fwhm_doub_40ns, fwhm_doub_80ns, fsps_new):
-    amp_sing_array = read_hist_file(amp_sing, fsps_new)
-    charge_sing_array = read_hist_file(charge_sing, fsps_new)
-    fwhm_sing_array = read_hist_file(fwhm_sing, fsps_new)
-    amp_doub_no_delay_array = read_hist_file(amp_doub_no_delay, fsps_new)
-    amp_doub_05rt_array = read_hist_file(amp_doub_05rt, fsps_new)
-    amp_doub_1rt_array = read_hist_file(amp_doub_1rt, fsps_new)
-    amp_doub_15rt_array = read_hist_file(amp_doub_15rt, fsps_new)
-    amp_doub_2rt_array = read_hist_file(amp_doub_2rt, fsps_new)
-    amp_doub_25rt_array = read_hist_file(amp_doub_25rt, fsps_new)
-    amp_doub_3rt_array = read_hist_file(amp_doub_3rt, fsps_new)
-    amp_doub_35rt_array = read_hist_file(amp_doub_35rt, fsps_new)
-    amp_doub_4rt_array = read_hist_file(amp_doub_4rt, fsps_new)
-    amp_doub_45rt_array = read_hist_file(amp_doub_45rt, fsps_new)
-    amp_doub_5rt_array = read_hist_file(amp_doub_5rt, fsps_new)
-    amp_doub_55rt_array = read_hist_file(amp_doub_55rt, fsps_new)
-    amp_doub_6rt_array = read_hist_file(amp_doub_6rt, fsps_new)
-    amp_doub_40ns_array = read_hist_file(amp_doub_40ns, fsps_new)
-    amp_doub_80ns_array = read_hist_file(amp_doub_80ns, fsps_new)
-    charge_doub_no_delay_array = read_hist_file(charge_doub_no_delay, fsps_new)
-    charge_doub_05rt_array = read_hist_file(charge_doub_05rt, fsps_new)
-    charge_doub_1rt_array = read_hist_file(charge_doub_1rt, fsps_new)
-    charge_doub_15rt_array = read_hist_file(charge_doub_15rt, fsps_new)
-    charge_doub_2rt_array = read_hist_file(charge_doub_2rt, fsps_new)
-    charge_doub_25rt_array = read_hist_file(charge_doub_25rt, fsps_new)
-    charge_doub_3rt_array = read_hist_file(charge_doub_3rt, fsps_new)
-    charge_doub_35rt_array = read_hist_file(charge_doub_35rt, fsps_new)
-    charge_doub_4rt_array = read_hist_file(charge_doub_4rt, fsps_new)
-    charge_doub_45rt_array = read_hist_file(charge_doub_45rt, fsps_new)
-    charge_doub_5rt_array = read_hist_file(charge_doub_5rt, fsps_new)
-    charge_doub_55rt_array = read_hist_file(charge_doub_55rt, fsps_new)
-    charge_doub_6rt_array = read_hist_file(charge_doub_6rt, fsps_new)
-    charge_doub_40ns_array = read_hist_file(charge_doub_40ns, fsps_new)
-    charge_doub_80ns_array = read_hist_file(charge_doub_80ns, fsps_new)
-    fwhm_doub_no_delay_array = read_hist_file(fwhm_doub_no_delay, fsps_new)
-    fwhm_doub_05rt_array = read_hist_file(fwhm_doub_05rt, fsps_new)
-    fwhm_doub_1rt_array = read_hist_file(fwhm_doub_1rt, fsps_new)
-    fwhm_doub_15rt_array = read_hist_file(fwhm_doub_15rt, fsps_new)
-    fwhm_doub_2rt_array = read_hist_file(fwhm_doub_2rt, fsps_new)
-    fwhm_doub_25rt_array = read_hist_file(fwhm_doub_25rt, fsps_new)
-    fwhm_doub_3rt_array = read_hist_file(fwhm_doub_3rt, fsps_new)
-    fwhm_doub_35rt_array = read_hist_file(fwhm_doub_35rt, fsps_new)
-    fwhm_doub_4rt_array = read_hist_file(fwhm_doub_4rt, fsps_new)
-    fwhm_doub_45rt_array = read_hist_file(fwhm_doub_45rt, fsps_new)
-    fwhm_doub_5rt_array = read_hist_file(fwhm_doub_5rt, fsps_new)
-    fwhm_doub_55rt_array = read_hist_file(fwhm_doub_55rt, fsps_new)
-    fwhm_doub_6rt_array = read_hist_file(fwhm_doub_6rt, fsps_new)
-    fwhm_doub_40ns_array = read_hist_file(fwhm_doub_40ns, fsps_new)
-    fwhm_doub_80ns_array = read_hist_file(fwhm_doub_80ns, fsps_new)
+                fwhm_doub_55rt, fwhm_doub_6rt, fwhm_doub_40ns, fwhm_doub_80ns):
+    amp_sing_array = read_hist_file(amp_sing)
+    charge_sing_array = read_hist_file(charge_sing)
+    fwhm_sing_array = read_hist_file(fwhm_sing)
+    amp_doub_no_delay_array = read_hist_file(amp_doub_no_delay)
+    amp_doub_05rt_array = read_hist_file(amp_doub_05rt)
+    amp_doub_1rt_array = read_hist_file(amp_doub_1rt)
+    amp_doub_15rt_array = read_hist_file(amp_doub_15rt)
+    amp_doub_2rt_array = read_hist_file(amp_doub_2rt)
+    amp_doub_25rt_array = read_hist_file(amp_doub_25rt)
+    amp_doub_3rt_array = read_hist_file(amp_doub_3rt)
+    amp_doub_35rt_array = read_hist_file(amp_doub_35rt)
+    amp_doub_4rt_array = read_hist_file(amp_doub_4rt)
+    amp_doub_45rt_array = read_hist_file(amp_doub_45rt)
+    amp_doub_5rt_array = read_hist_file(amp_doub_5rt)
+    amp_doub_55rt_array = read_hist_file(amp_doub_55rt)
+    amp_doub_6rt_array = read_hist_file(amp_doub_6rt)
+    amp_doub_40ns_array = read_hist_file(amp_doub_40ns)
+    amp_doub_80ns_array = read_hist_file(amp_doub_80ns)
+    charge_doub_no_delay_array = read_hist_file(charge_doub_no_delay)
+    charge_doub_05rt_array = read_hist_file(charge_doub_05rt)
+    charge_doub_1rt_array = read_hist_file(charge_doub_1rt)
+    charge_doub_15rt_array = read_hist_file(charge_doub_15rt)
+    charge_doub_2rt_array = read_hist_file(charge_doub_2rt)
+    charge_doub_25rt_array = read_hist_file(charge_doub_25rt)
+    charge_doub_3rt_array = read_hist_file(charge_doub_3rt)
+    charge_doub_35rt_array = read_hist_file(charge_doub_35rt)
+    charge_doub_4rt_array = read_hist_file(charge_doub_4rt)
+    charge_doub_45rt_array = read_hist_file(charge_doub_45rt)
+    charge_doub_5rt_array = read_hist_file(charge_doub_5rt)
+    charge_doub_55rt_array = read_hist_file(charge_doub_55rt)
+    charge_doub_6rt_array = read_hist_file(charge_doub_6rt)
+    charge_doub_40ns_array = read_hist_file(charge_doub_40ns)
+    charge_doub_80ns_array = read_hist_file(charge_doub_80ns)
+    fwhm_doub_no_delay_array = read_hist_file(fwhm_doub_no_delay)
+    fwhm_doub_05rt_array = read_hist_file(fwhm_doub_05rt)
+    fwhm_doub_1rt_array = read_hist_file(fwhm_doub_1rt)
+    fwhm_doub_15rt_array = read_hist_file(fwhm_doub_15rt)
+    fwhm_doub_2rt_array = read_hist_file(fwhm_doub_2rt)
+    fwhm_doub_25rt_array = read_hist_file(fwhm_doub_25rt)
+    fwhm_doub_3rt_array = read_hist_file(fwhm_doub_3rt)
+    fwhm_doub_35rt_array = read_hist_file(fwhm_doub_35rt)
+    fwhm_doub_4rt_array = read_hist_file(fwhm_doub_4rt)
+    fwhm_doub_45rt_array = read_hist_file(fwhm_doub_45rt)
+    fwhm_doub_5rt_array = read_hist_file(fwhm_doub_5rt)
+    fwhm_doub_55rt_array = read_hist_file(fwhm_doub_55rt)
+    fwhm_doub_6rt_array = read_hist_file(fwhm_doub_6rt)
+    fwhm_doub_40ns_array = read_hist_file(fwhm_doub_40ns)
+    fwhm_doub_80ns_array = read_hist_file(fwhm_doub_80ns)
 
     amp_sing_mean = np.mean(amp_sing_array)
     charge_sing_mean = np.mean(charge_sing_array)
@@ -1803,36 +1803,15 @@ def make_plots(amp_sing_mean, charge_sing_mean, fwhm_sing_mean, amp_doub_no_dela
                fwhm_doub_40ns_std, fwhm_doub_80ns_std, shaping, fsps_new, dest_path):
     print('Making plots...')
 
-    if shaping == 'rt_1':
-        start_fwhm = 5
-        end_fwhm = 35
-        factor_fwhm = 10 ** -9
-        start_charge = 10
-        end_charge = 125
-        factor_charge = 10 ** -9
-        start_amp = 50
-        end_amp = 550
-        factor_amp = 1
-    elif shaping == 'rt_2':
-        start_fwhm = 10
-        end_fwhm = 60
-        factor_fwhm = 10 ** -9
-        start_charge = 10
-        end_charge = 125
-        factor_charge = 10 ** -9
-        start_amp = 25
-        end_amp = 200
-        factor_amp = 1
-    else:
-        start_fwhm = 20
-        end_fwhm = 80
-        factor_fwhm = 10 ** -9
-        start_charge = 10
-        end_charge = 125
-        factor_charge = 10 ** -9
-        start_amp = 20
-        end_amp = 150
-        factor_amp = 1
+    start_fwhm = 5
+    end_fwhm = 80
+    factor_fwhm = 10 ** -9
+    start_charge = 10
+    end_charge = 500
+    factor_charge = 10 ** -9
+    start_amp = 50
+    end_amp = 450
+    factor_amp = 1
 
     false_spes_vs_delay(start_fwhm, end_fwhm, factor_fwhm, 'fwhm', 'FWHM', 's', fsps_new, fwhm_sing_mean,
                         fwhm_doub_no_delay_mean, fwhm_doub_05rt_mean, fwhm_doub_1rt_mean, fwhm_doub_15rt_mean,
@@ -1848,3 +1827,136 @@ def make_plots(amp_sing_mean, charge_sing_mean, fwhm_sing_mean, amp_doub_no_dela
                     charge_doub_no_delay_mean, charge_sing_std, charge_doub_no_delay_std, fsps_new, dest_path, shaping)
     false_spes_mpes(start_amp, end_amp, factor_amp, 'amp', 'Amplitude', 'bits', amp_sing_mean, amp_doub_no_delay_mean,
                     amp_sing_std, amp_doub_no_delay_std, fsps_new, dest_path, shaping)
+
+
+# P3_DOUBLE_STUDIES_3
+
+
+# Creates p3 double folder names
+def initialize_folders3(date, filter_band):
+    gen_path = Path(r'/Volumes/TOSHIBA EXT/data/watchman')
+    save_path = Path(str(gen_path / '%08d_watchman_spe/waveforms/%s') % (date, filter_band))
+    dest_path = Path(save_path / 'd3')
+    calc_single = Path(dest_path / 'calculations_single')
+    calc_double = Path(dest_path / 'calculations_double')
+
+    return gen_path, save_path, dest_path, calc_single, calc_double
+
+
+def cutoff_vals(fsps_new, shaping):
+    if fsps_new == 125000000.:
+        if shaping == 'rt_1':
+            amp = 430
+            charge = 830
+            fwhm = 200
+        elif shaping == 'rt_2':
+            amp = 440
+            charge = 2340
+            fwhm = 360
+        elif shaping == 'rt_4':
+            amp = 445
+            charge = 3120
+            fwhm = 530
+        else:
+            amp = 600
+            charge = 5240
+            fwhm = 1330
+    elif fsps_new == 250000000.:
+        if shaping == 'rt_1':
+            amp = 435
+            charge = 830
+            fwhm = 200
+        elif shaping == 'rt_2':
+            amp = 445
+            charge = 2340
+            fwhm = 340
+        elif shaping == 'rt_4':
+            amp = 450
+            charge = 3110
+            fwhm = 530
+        else:
+            amp = 600
+            charge = 5230
+            fwhm = 1330
+    else:
+        if shaping == 'rt_1':
+            amp = 430
+            charge = 830
+            fwhm = 200
+        elif shaping == 'rt_2':
+            amp = 450
+            charge = 2320
+            fwhm = 350
+        elif shaping == 'rt_4':
+            amp = 450
+            charge = 3120
+            fwhm = 600
+        else:
+            amp = 620
+            charge = 5240
+            fwhm = 1340
+
+    charge_factor = 1e-10
+    fwhm_factor = 1e-10
+
+    charge = charge * charge_factor
+    fwhm = fwhm * fwhm_factor
+
+    return amp, charge, fwhm
+
+
+def sort(amp, charge, fwhm, amp_cut, charge_cut, fwhm_cut):
+    if amp >= amp_cut or charge >= charge_cut or fwhm >= fwhm_cut:
+        return 'mpe'
+    else:
+        return 'spe'
+
+
+def sort_single(amp_cut, charge_cut, fwhm_cut, calc_path, fsps_new, shaping):
+    folder_name = Path(calc_path / str(str(int(fsps_new / 1e6)) + '_Msps') / shaping)
+    spes_as_spes = 0
+    spes_as_mpes = 0
+    i = 0
+
+    for item in os.listdir(folder_name):
+        i += 1
+        filename = folder_name / item
+        t1, t2, charge, amplitude, fwhm = read_calc(filename)
+        waveform = sort(amplitude, charge, fwhm, amp_cut, charge_cut, fwhm_cut)
+        if waveform == 'spe':
+            spes_as_spes += 1
+        else:
+            spes_as_mpes += 1
+
+    true_spes_per = spes_as_spes / i * 100
+    false_mpes_per = spes_as_mpes / i * 100
+
+    true_spes_per = float(format(true_spes_per, '.2f'))
+    false_mpes_per = float(format(false_mpes_per, '.2f'))
+
+    return true_spes_per, false_mpes_per
+
+
+def sort_double(amp_cut, charge_cut, fwhm_cut, calc_path, fsps_new, delay_folder, shaping):
+    folder_name = Path(calc_path / str(str(int(fsps_new / 1e6)) + '_Msps') / delay_folder / shaping)
+    mpes_as_mpes = 0
+    mpes_as_spes = 0
+    i = 0
+
+    for item in os.listdir(folder_name):
+        i += 1
+        filename = folder_name / item
+        t1, t2, charge, amplitude, fwhm = read_calc(filename)
+        waveform = sort(amplitude, charge, fwhm, amp_cut, charge_cut, fwhm_cut)
+        if waveform == 'spe':
+            mpes_as_spes += 1
+        else:
+            mpes_as_mpes += 1
+
+    true_mpes_per = mpes_as_mpes / i * 100
+    false_spes_per = mpes_as_spes / i * 100
+
+    true_mpes_per = float(format(true_mpes_per, '.2f'))
+    false_spes_per = float(format(false_spes_per, '.2f'))
+
+    return true_mpes_per, false_spes_per
