@@ -40,7 +40,7 @@ def double_spe_studies_2(date, filter_band, fsps_new, shaping):
                     charge_doub_6rt, charge_doub_40ns, charge_doub_80ns, fwhm_doub_no_delay, fwhm_doub_05rt,
                     fwhm_doub_1rt, fwhm_doub_15rt, fwhm_doub_2rt, fwhm_doub_25rt, fwhm_doub_3rt, fwhm_doub_35rt,
                     fwhm_doub_4rt, fwhm_doub_45rt, fwhm_doub_5rt, fwhm_doub_55rt, fwhm_doub_6rt, fwhm_doub_40ns,
-                    fwhm_doub_80ns, fsps_new)
+                    fwhm_doub_80ns)
 
     make_plots(amp_sing_mean, charge_sing_mean, fwhm_sing_mean, amp_doub_no_delay_mean, charge_doub_no_delay_mean,
                fwhm_doub_no_delay_mean, fwhm_doub_05rt_mean, fwhm_doub_1rt_mean, fwhm_doub_15rt_mean,
