@@ -930,7 +930,7 @@ def p1b_sort(i, nhdr, jitter_array1, jitter_array2, p1b_spe_array, file_path_shi
     for j in range(len(jitter_array2)):
         if jitter_array2[j] == i:
             val = 2
-    if val == 1:    # If a file had unreasonable jitter times, plots waveform for user to sort manually
+    if val == 1:    # If a file had unreasonable jitter times, it is not spe
         print('File #%05d is not spe' % i)
         t, v, hdr = rw(str(file_path_shift / 'D1--waveforms--%05d.txt') % i, nhdr)
         ww(t, v, str(file_path_not_spe / 'D1--waveforms--%05d.txt') % i, hdr)
