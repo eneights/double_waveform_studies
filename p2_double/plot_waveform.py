@@ -7,7 +7,7 @@ def plot_waveform(fil_band, folder, delay_folder):
     for filename in os.listdir(Path(r'/Volumes/TOSHIBA EXT/data/watchman/20190513_watchman_spe/waveforms/' +
                                     str(fil_band) + '/d2/' + str(folder) + '/' + str(delay_folder))):
         file = Path(r'/Volumes/TOSHIBA EXT/data/watchman/20190513_watchman_spe/waveforms/' +
-                                    str(fil_band) + '/d2/' + str(folder) + '/' + str(delay_folder)) / filename
+                    str(fil_band) + '/d2/' + str(folder) + '/' + str(delay_folder)) / filename
         show_waveform(file, 'd2')
 
 
