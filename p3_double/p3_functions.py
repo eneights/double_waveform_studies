@@ -1731,6 +1731,17 @@ def false_spes_vs_delay(start, end, factor, parameter, parameter_title, units, f
                             1.52e-8, 1.672e-8, 1.824e-8, 4e-8, 8e-8])
     cutoff = str(float(format(cutoff_array_2[idx], '.2e')))
 
+    plt.plot(cutoff_array, spes_as_mpes_array)
+    plt.ylim(-5, 100)
+    plt.hlines(1, start * factor, end * factor)
+    plt.xlabel(parameter_title + ' Cutoff (' + units + ')')
+    plt.ylabel('% SPES Misidentified as MPEs')
+    plt.title('False MPEs\n' + parameter_title + ' Cutoff: ' + str(cutoff) + ' ' + units)
+    plt.annotate('1% false MPEs', (start * factor, 3))
+    plt.savefig(dest_path / 'plots' / str('false_mpes_' + parameter + '_' + str(int(fsps_new / 1e6)) + '_Msps_' +
+                                          shaping + '.png'), dpi=360)
+    plt.close()
+
     plt.scatter(delay_array, mpes_as_spes_array)
     plt.plot(delay_array, mpes_as_spes_array)
     plt.xlim(-1e-8, 8.2e-8)
@@ -1738,9 +1749,6 @@ def false_spes_vs_delay(start, end, factor, parameter, parameter_title, units, f
     plt.xlabel('Delay (s)')
     plt.ylabel('% MPES Misidentified as SPEs')
     plt.title('False SPEs\n' + parameter_title + ' Cutoff = ' + cutoff + ' (' + units + ') (1% False MPEs)')
-    for i in range(len(mpes_as_spes_array)):
-        pt = str(float(format(mpes_as_spes_array[i], '.1e')))
-        plt.annotate(pt + '%', (delay_array[i], mpes_as_spes_array[i] + 1))
     plt.savefig(dest_path / 'plots' / str('false_spes_delay_' + parameter + '_' + str(int(fsps_new / 1e6)) + '_Msps_' +
                                           shaping + '.png'), dpi=360)
     plt.close()
